@@ -3,7 +3,7 @@ const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
 const { Op } = require('sequelize')
-const { RentalItem, Img, Keyword, RentalItemKeyword, sequelize } = require('../models')
+const { RentalItem, RentalImg, Keyword, ItemKeyword, sequelize } = require('../models')
 const router = express.Router()
 
 // uploads 폴더가 없을 경우 새로 생성
@@ -41,11 +41,11 @@ router.post('/', upload.array('img'), async (req, res, next) => {
    const transaction = await sequelize.transaction()
 
    try {
-      // 렌탈상품(rentalItem) insert
-      const { name, price, stock, content, status = 'available', rentalPeriodMin = 1, rentalPeriodMax = 30, keywords } = req.body
+      // 모델 필드명에 맞게 수정
+      const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus = 'Y', keywords } = req.body
 
       // 필수 필드 검증
-      if (!name || !price || stock === undefined) {
+      if (!rentalItemNm || !oneDayPrice || quantity === undefined) {
          const error = new Error('상품명, 일일 렌탈가격, 재고는 필수 입력 항목입니다.')
          error.status = 400
          await transaction.rollback()
@@ -54,29 +54,27 @@ router.post('/', upload.array('img'), async (req, res, next) => {
 
       const rentalItem = await RentalItem.create(
          {
-            name,
-            price,
-            stock,
-            content,
-            status,
-            rentalPeriodMin,
-            rentalPeriodMax,
+            rentalItemNm,
+            oneDayPrice,
+            quantity,
+            rentalDetail,
+            rentalStatus,
          },
          { transaction }
       )
 
-      // 이미지(img) insert
+      // 이미지(RentalImg) insert
       let images = []
       if (req.files && req.files.length > 0) {
-         // imgs 테이블에 insert할 객체 생성
+         // RentalImg 테이블에 insert할 객체 생성
          const imageData = req.files.map((file) => ({
             url: `/${file.filename}`, //이미지 경로
-            alt: name, // 상품명을 alt로 사용
+            alt: rentalItemNm, // 상품명을 alt로 사용
             rentalItemId: rentalItem.id, // 생성된 렌탈상품 ID 연결
          }))
 
          // 이미지 여러개 insert
-         images = await Img.bulkCreate(imageData, { transaction })
+         images = await RentalImg.bulkCreate(imageData, { transaction })
       }
 
       // 키워드 등록
@@ -96,8 +94,8 @@ router.post('/', upload.array('img'), async (req, res, next) => {
                { transaction }
             )
 
-            // 렌탈상품-키워드 연결
-            await RentalItemKeyword.create(
+            // 렌탈상품-키워드 연결 (ItemKeyword 테이블 사용)
+            await ItemKeyword.create(
                {
                   rentalItemId: rentalItem.id,
                   keywordId: keyword.id,
@@ -135,8 +133,8 @@ router.get('/', async (req, res, next) => {
 
       // 상태, 상품명, 상품설명 값 가져오기
       const searchTerm = req.query.keyword || '' // 사용자가 입력한 검색어
-      const searchCategory = req.query.searchCategory || 'name' // 상품명 or 상품설명으로 검색
-      const sellCategory = req.query.status // 렌탈상품 상태
+      const searchCategory = req.query.searchCategory || 'rentalItemNm' // 상품명 or 상품설명으로 검색
+      const sellCategory = req.query.rentalStatus // 렌탈상품 상태
 
       /*
          스프레드 연산자(...)를 사용하는 이유는 조건적으로 객체를 추가하기 위해서
@@ -147,11 +145,11 @@ router.get('/', async (req, res, next) => {
       const whereClause = {
          // searchTerm이 존재하면 해당 검색어(searchTerm)가 포함된 검색 범주(searchCategory)를 조건으로 추가
          ...(searchTerm && {
-            [Op.or]: [{ name: { [Op.like]: `%${searchTerm}%` } }, { content: { [Op.like]: `%${searchTerm}%` } }],
+            [Op.or]: [{ rentalItemNm: { [Op.like]: `%${searchTerm}%` } }, { rentalDetail: { [Op.like]: `%${searchTerm}%` } }],
          }),
-         //sellCategory가 존재하면 status가 해당 상태와 일치하는 항목을 조건으로 추가
+         //sellCategory가 존재하면 rentalStatus가 해당 상태와 일치하는 항목을 조건으로 추가
          ...(sellCategory && {
-            status: sellCategory,
+            rentalStatus: sellCategory,
          }),
       }
 
@@ -167,15 +165,19 @@ router.get('/', async (req, res, next) => {
          order: [['createdAt', 'DESC']],
          include: [
             {
-               model: Img,
-               as: 'images',
+               model: RentalImg,
+               as: 'rentalImgs',
                attributes: ['id', 'url', 'alt'],
             },
             {
-               model: Keyword,
-               as: 'keywords',
-               through: { attributes: [] },
-               attributes: ['id', 'name'],
+               model: ItemKeyword,
+               include: [
+                  {
+                     model: Keyword,
+                     attributes: ['id', 'name'],
+                  },
+               ],
+               attributes: [], // ItemKeyword의 다른 필드는 제외
             },
          ],
       })
@@ -217,8 +219,8 @@ router.delete('/:id', async (req, res, next) => {
       }
 
       // 연관 데이터 삭제 (CASCADE로 설정되어 있다면 자동 삭제됨)
-      await RentalItemKeyword.destroy({ where: { rentalItemId: id }, transaction })
-      await Img.destroy({ where: { rentalItemId: id }, transaction })
+      await ItemKeyword.destroy({ where: { rentalItemId: id }, transaction })
+      await RentalImg.destroy({ where: { rentalItemId: id }, transaction })
 
       //렌탈상품 삭제
       await rentalItem.destroy({ transaction })
@@ -249,15 +251,19 @@ router.get('/:id', async (req, res, next) => {
          where: { id }, // 특정 렌탈상품 id로 조회
          include: [
             {
-               model: Img,
-               as: 'images',
+               model: RentalImg,
+               as: 'rentalImgs',
                attributes: ['id', 'url', 'alt'],
             },
             {
-               model: Keyword,
-               as: 'keywords',
-               through: { attributes: [] },
-               attributes: ['id', 'name'],
+               model: ItemKeyword,
+               include: [
+                  {
+                     model: Keyword,
+                     attributes: ['id', 'name'],
+                  },
+               ],
+               attributes: [], // ItemKeyword의 다른 필드는 제외
             },
          ],
       })
@@ -286,7 +292,7 @@ router.put('/:id', upload.array('img'), async (req, res, next) => {
 
    try {
       const id = req.params.id
-      const { name, price, stock, content, status, rentalPeriodMin, rentalPeriodMax, keywords } = req.body
+      const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus, keywords } = req.body
 
       // 렌탈상품이 존재하는지 확인
       const rentalItem = await RentalItem.findByPk(id, { transaction })
@@ -300,36 +306,34 @@ router.put('/:id', upload.array('img'), async (req, res, next) => {
 
       // 렌탈상품 정보 업데이트
       const updateData = {}
-      if (name !== undefined) updateData.name = name
-      if (price !== undefined) updateData.price = price
-      if (stock !== undefined) updateData.stock = stock
-      if (content !== undefined) updateData.content = content
-      if (status !== undefined) updateData.status = status
-      if (rentalPeriodMin !== undefined) updateData.rentalPeriodMin = rentalPeriodMin
-      if (rentalPeriodMax !== undefined) updateData.rentalPeriodMax = rentalPeriodMax
+      if (rentalItemNm !== undefined) updateData.rentalItemNm = rentalItemNm
+      if (oneDayPrice !== undefined) updateData.oneDayPrice = oneDayPrice
+      if (quantity !== undefined) updateData.quantity = quantity
+      if (rentalDetail !== undefined) updateData.rentalDetail = rentalDetail
+      if (rentalStatus !== undefined) updateData.rentalStatus = rentalStatus
 
       await rentalItem.update(updateData, { transaction })
 
       // 수정할 이미지가 존재하는 경우
       if (req.files && req.files.length > 0) {
          // 기존 이미지 삭제
-         await Img.destroy({ where: { rentalItemId: id }, transaction })
+         await RentalImg.destroy({ where: { rentalItemId: id }, transaction })
 
          // 새 이미지 추가
          const imageData = req.files.map((file) => ({
             url: `/${file.filename}`, //이미지 경로
-            alt: name || rentalItem.name, // 상품명을 alt로 사용
+            alt: rentalItemNm || rentalItem.rentalItemNm, // 상품명을 alt로 사용
             rentalItemId: rentalItem.id, // 렌탈상품 ID 연결
          }))
 
          // 이미지 여러개 insert
-         await Img.bulkCreate(imageData, { transaction })
+         await RentalImg.bulkCreate(imageData, { transaction })
       }
 
       // 키워드 업데이트
       if (keywords !== undefined) {
          // 기존 키워드 연결 삭제
-         await RentalItemKeyword.destroy({ where: { rentalItemId: id }, transaction })
+         await ItemKeyword.destroy({ where: { rentalItemId: id }, transaction })
 
          if (keywords) {
             const keywordArray = keywords
@@ -346,7 +350,7 @@ router.put('/:id', upload.array('img'), async (req, res, next) => {
                   { transaction }
                )
 
-               await RentalItemKeyword.create(
+               await ItemKeyword.create(
                   {
                      rentalItemId: id,
                      keywordId: keyword.id,
