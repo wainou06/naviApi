@@ -5,11 +5,7 @@ module.exports = class RentalItem extends Sequelize.Model {
       return super.init(
          {
             rentalItemNm: {
-               type: Sequelize.STRING(255),
-               allowNull: false,
-            },
-            quantity: {
-               type: Sequelize.INTEGER,
+               type: Sequelize.STRING(100),
                allowNull: false,
             },
             oneDayPrice: {
@@ -22,6 +18,10 @@ module.exports = class RentalItem extends Sequelize.Model {
             },
             rentalDetail: {
                type: Sequelize.TEXT,
+               allowNull: false,
+            },
+            quantity: {
+               type: Sequelize.INTEGER,
                allowNull: false,
             },
          },
@@ -39,15 +39,22 @@ module.exports = class RentalItem extends Sequelize.Model {
    }
 
    static associate(db) {
-      RentalItem.hasMany(db.RentalImg, {
+      // RentalItem <-> RentalOrder
+      db.RentalItem.belongsToMany(db.RentalOrder, {
+         through: db.RentalOrderItem,
+         foreignKey: 'rentalItemId',
+         otherKey: 'rentalOrderId',
+         as: 'rentalOrders',
+      })
+
+      // RentalItem -> RentalImg (1:N)
+      db.RentalItem.hasMany(db.RentalImg, {
          foreignKey: 'rentalItemId',
          sourceKey: 'id',
+         as: 'rentalImgs',
       })
-      RentalItem.hasMany(db.ItemKeyword, {
-         foreignKey: 'rentalItemId',
-         sourceKey: 'id',
-      })
-      RentalItem.hasMany(db.RentalOrderItem, {
+
+      db.RentalItem.hasMany(db.ItemKeyword, {
          foreignKey: 'rentalItemId',
          sourceKey: 'id',
       })

@@ -5,7 +5,7 @@ module.exports = class Item extends Sequelize.Model {
       return super.init(
          {
             itemNm: {
-               type: Sequelize.STRING(255),
+               type: Sequelize.STRING(100),
                allowNull: false,
             },
             price: {
@@ -19,6 +19,23 @@ module.exports = class Item extends Sequelize.Model {
             itemDetail: {
                type: Sequelize.TEXT,
                allowNull: false,
+            },
+            orderId: {
+               type: Sequelize.INTEGER,
+               allowNull: true,
+               references: {
+                  model: 'Orders',
+                  key: 'id',
+               },
+            },
+            userId: {
+               // 유저 외래 키 추가
+               type: Sequelize.INTEGER,
+               allowNull: false,
+               references: {
+                  model: 'Users',
+                  key: 'id',
+               },
             },
          },
          {
@@ -35,17 +52,31 @@ module.exports = class Item extends Sequelize.Model {
    }
 
    static associate(db) {
-      Item.hasMany(db.Img, {
-         foreignKey: 'itemId',
-         sourceKey: 'id',
-      })
-      Item.hasMany(db.ItemKeyword, {
-         foreignKey: 'itemId',
-         sourceKey: 'id',
-      })
-      Item.belongsTo(db.Order, {
+      // Item -> Order (N:1)
+      db.Item.belongsTo(db.Order, {
          foreignKey: 'orderId',
          targetKey: 'id',
+         as: 'order',
+      })
+
+      // Item -> Img (1:N)
+      db.Item.hasMany(db.Img, {
+         foreignKey: 'itemId',
+         sourceKey: 'id',
+         as: 'imgs',
+      })
+
+      // Item <-> Keyword (1:n)
+      db.Item.hasMany(db.ItemKeyword, {
+         foreignKey: 'itemId',
+         otherKey: 'keywordId',
+      })
+
+      // Item -> User (N:1) (아이템은 하나의 유저에 속함)
+      db.Item.belongsTo(db.User, {
+         foreignKey: 'userId',
+         targetKey: 'id',
+         as: 'user',
       })
    }
 }

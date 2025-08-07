@@ -7,7 +7,6 @@ module.exports = class Keyword extends Sequelize.Model {
             name: {
                type: Sequelize.STRING(255),
                allowNull: false,
-               // primaryKey: true,
             },
          },
          {

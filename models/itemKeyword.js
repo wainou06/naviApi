@@ -3,7 +3,16 @@ const Sequelize = require('sequelize')
 module.exports = class ItemKeyword extends Sequelize.Model {
    static init(sequelize) {
       return super.init(
-         {},
+         {
+            startAt: {
+               type: Sequelize.DATE,
+               allowNull: false,
+            },
+            endAt: {
+               type: Sequelize.DATE,
+               allowNull: false,
+            },
+         },
          {
             sequelize,
             timestamps: true,

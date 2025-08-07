@@ -4,13 +4,25 @@ module.exports = class RentalOrderItem extends Sequelize.Model {
    static init(sequelize) {
       return super.init(
          {
-            startAt: {
-               type: Sequelize.DATE,
+            rentalOrderId: {
+               type: Sequelize.INTEGER,
                allowNull: false,
+               references: {
+                  model: 'RentalOrders',
+                  key: 'id',
+                  onUpdate: 'CASCADE',
+                  onDelete: 'CASCADE',
+               },
             },
-            endAt: {
-               type: Sequelize.DATE,
+            rentalItemId: {
+               type: Sequelize.INTEGER,
                allowNull: false,
+               references: {
+                  model: 'RentalItems',
+                  key: 'id',
+                  onUpdate: 'CASCADE',
+                  onDelete: 'CASCADE',
+               },
             },
          },
          {
@@ -27,13 +39,18 @@ module.exports = class RentalOrderItem extends Sequelize.Model {
    }
 
    static associate(db) {
-      RentalOrderItem.belongsTo(db.RentalOrder, {
+      // RentalOrderItem -> RentalOrder (N:1)
+      db.RentalOrderItem.belongsTo(db.RentalOrder, {
          foreignKey: 'rentalOrderId',
          targetKey: 'id',
+         as: 'rentalOrder',
       })
-      RentalOrderItem.belongsTo(db.RentalItem, {
+
+      // RentalOrderItem -> RentalItem (N:1)
+      db.RentalOrderItem.belongsTo(db.RentalItem, {
          foreignKey: 'rentalItemId',
          targetKey: 'id',
+         as: 'rentalItem',
       })
    }
 }
