@@ -58,5 +58,11 @@ module.exports = class RentalItem extends Sequelize.Model {
          foreignKey: 'rentalItemId',
          sourceKey: 'id',
       })
+
+      // RentalItem -> User (N:1)
+      db.RentalItem.belongsTo(db.User, {
+         foreignKey: 'userId',
+         targetKey: 'id', // User 모델의 id와 연결
+      })
    }
 }

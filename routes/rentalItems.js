@@ -4,6 +4,7 @@ const path = require('path')
 const fs = require('fs')
 const { Op } = require('sequelize')
 const { RentalItem, RentalImg, Keyword, ItemKeyword, sequelize } = require('../models')
+const { isLoggedIn } = require('./middlewares') // 미들웨어 추가
 const router = express.Router()
 
 // uploads 폴더가 없을 경우 새로 생성
@@ -14,7 +15,7 @@ try {
    fs.mkdirSync('uploads') //폴더 생성
 }
 
-// 이미지 업로드를 위한 multer 설정
+// 이미지 업로드를 위한 multer 설정 (파일 타입 검증 추가)
 const upload = multer({
    // 저장할 위치와 파일명 지정
    storage: multer.diskStorage({
@@ -34,34 +35,38 @@ const upload = multer({
    }),
    // 파일의 크기 제한
    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB로 제한
+   // 파일 타입 검증 추가
+   fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+         cb(null, true)
+      } else {
+         cb(new Error('이미지 파일만 업로드 가능합니다.'), false)
+      }
+   },
 })
 
-// 렌탈상품 등록
-router.post('/', upload.array('img'), async (req, res, next) => {
-   const transaction = await sequelize.transaction()
-
+// 렌탈상품 등록 /rental/create (미들웨어 추가)
+router.post('/', isLoggedIn, upload.array('img'), async (req, res) => {
    try {
       // 모델 필드명에 맞게 수정
       const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus = 'Y', keywords } = req.body
 
       // 필수 필드 검증
       if (!rentalItemNm || !oneDayPrice || quantity === undefined) {
-         const error = new Error('상품명, 일일 렌탈가격, 재고는 필수 입력 항목입니다.')
-         error.status = 400
-         await transaction.rollback()
-         return next(error)
+         return res.status(400).json({
+            success: false,
+            message: '상품명, 일일 렌탈가격, 재고는 필수 입력 항목입니다.',
+         })
       }
 
-      const rentalItem = await RentalItem.create(
-         {
-            rentalItemNm,
-            oneDayPrice,
-            quantity,
-            rentalDetail,
-            rentalStatus,
-         },
-         { transaction }
-      )
+      const rentalItem = await RentalItem.create({
+         rentalItemNm,
+         oneDayPrice,
+         quantity,
+         rentalDetail,
+         rentalStatus,
+         userId: req.user.id, // 사용자 ID 추가
+      })
 
       // 이미지(RentalImg) insert
       let images = []
@@ -74,7 +79,7 @@ router.post('/', upload.array('img'), async (req, res, next) => {
          }))
 
          // 이미지 여러개 insert
-         images = await RentalImg.bulkCreate(imageData, { transaction })
+         images = await RentalImg.bulkCreate(imageData)
       }
 
       // 키워드 등록
@@ -86,46 +91,39 @@ router.post('/', upload.array('img'), async (req, res, next) => {
 
          for (const keywordName of keywordArray) {
             // 키워드가 존재하지 않으면 생성
-            const [keyword] = await Keyword.findOrCreate(
-               {
-                  where: { name: keywordName },
-                  defaults: { name: keywordName },
-               },
-               { transaction }
-            )
+            const [keyword] = await Keyword.findOrCreate({
+               where: { name: keywordName },
+               defaults: { name: keywordName },
+            })
 
             // 렌탈상품-키워드 연결 (ItemKeyword 테이블 사용)
-            await ItemKeyword.create(
-               {
-                  rentalItemId: rentalItem.id,
-                  keywordId: keyword.id,
-               },
-               { transaction }
-            )
+            await ItemKeyword.create({
+               rentalItemId: rentalItem.id,
+               keywordId: keyword.id,
+            })
          }
       }
-
-      // 트랜잭션 커밋
-      await transaction.commit()
 
       res.status(201).json({
          success: true,
          message: '렌탈상품이 성공적으로 등록되었습니다.',
-         rentalItem,
-         images,
+         data: {
+            rentalItem,
+            images,
+         },
       })
    } catch (error) {
-      // 트랜잭션 롤백
-      await transaction.rollback()
-
-      error.status = 500
-      error.message = '렌탈상품 등록 중 오류가 발생했습니다.'
-      next(error)
+      console.error('렌탈상품 등록 오류:', error)
+      res.status(500).json({
+         success: false,
+         message: '렌탈상품 등록에 실패했습니다.',
+         error: error.message,
+      })
    }
 })
 
-// 전체 렌탈상품 불러오기(페이징, 검색 기능)
-router.get('/', async (req, res, next) => {
+//GET /rental/list - 상품 목록 조회 (검색, 페이징 기능)
+router.get('/list', async (req, res) => {
    try {
       const page = parseInt(req.query.page, 10) || 1
       const limit = parseInt(req.query.limit, 10) || 5
@@ -136,11 +134,6 @@ router.get('/', async (req, res, next) => {
       const searchCategory = req.query.searchCategory || 'rentalItemNm' // 상품명 or 상품설명으로 검색
       const sellCategory = req.query.rentalStatus // 렌탈상품 상태
 
-      /*
-         스프레드 연산자(...)를 사용하는 이유는 조건적으로 객체를 추가하기 위해서
-         스프레드 연산자는 "", false, 0, null, undefined 와 같은 falsy값들은 무시하고 
-         값이 true 일때만 반환된 객체를 추가
-      */
       // 조건부 where 절을 만드는 객체
       const whereClause = {
          // searchTerm이 존재하면 해당 검색어(searchTerm)가 포함된 검색 범주(searchCategory)를 조건으로 추가
@@ -182,68 +175,68 @@ router.get('/', async (req, res, next) => {
          ],
       })
 
-      res.json({
+      res.status(200).json({
          success: true,
          message: '렌탈상품 목록 조회 성공',
-         rentalItems,
-         pagination: {
-            totalItems: count,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-            limit,
+         data: {
+            rentalItems,
+            pagination: {
+               totalItems: count,
+               totalPages: Math.ceil(count / limit),
+               currentPage: page,
+               limit,
+            },
          },
       })
    } catch (error) {
-      error.status = 500
-      error.message = '전체 렌탈상품 리스트를 불러오는 중 오류가 발생했습니다.'
-      next(error)
+      console.error('렌탈상품 목록 조회 오류:', error)
+      res.status(500).json({
+         success: false,
+         message: '전체 렌탈상품 리스트를 불러오는데 실패했습니다.',
+         error: error.message,
+      })
    }
 })
 
-//렌탈상품 삭제 localhost:8000/rental-item/:id
-router.delete('/:id', async (req, res, next) => {
-   const transaction = await sequelize.transaction()
-
+//DELETE 렌탈상품 삭제 /rental/:id
+router.delete('/:id', async (req, res) => {
    try {
       const id = req.params.id //렌탈상품id
 
       //렌탈상품이 존재하는지 확인
-      const rentalItem = await RentalItem.findByPk(id, { transaction })
+      const rentalItem = await RentalItem.findByPk(id)
 
       //렌탈상품이 존재하지 않으면
       if (!rentalItem) {
-         const error = new Error('렌탈상품을 찾을 수 없습니다')
-         error.status = 404
-         await transaction.rollback()
-         return next(error)
+         return res.status(404).json({
+            success: false,
+            message: '렌탈상품을 찾을 수 없습니다.',
+         })
       }
 
       // 연관 데이터 삭제 (CASCADE로 설정되어 있다면 자동 삭제됨)
-      await ItemKeyword.destroy({ where: { rentalItemId: id }, transaction })
-      await RentalImg.destroy({ where: { rentalItemId: id }, transaction })
+      await ItemKeyword.destroy({ where: { rentalItemId: id } })
+      await RentalImg.destroy({ where: { rentalItemId: id } })
 
       //렌탈상품 삭제
-      await rentalItem.destroy({ transaction })
+      await rentalItem.destroy()
 
-      // 트랜잭션 커밋
-      await transaction.commit()
-
-      res.json({
+      res.status(200).json({
          success: true,
          message: '렌탈상품이 성공적으로 삭제되었습니다.',
       })
    } catch (error) {
-      // 트랜잭션 롤백
-      await transaction.rollback()
-
-      error.status = 500
-      error.message = '렌탈상품 삭제 중 오류가 발생했습니다.'
-      next(error)
+      console.error('렌탈상품 삭제 오류:', error)
+      res.status(500).json({
+         success: false,
+         message: '렌탈상품 삭제에 실패했습니다.',
+         error: error.message,
+      })
    }
 })
 
-// 특정 렌탈상품 불러오기 localhost:8000/rental-item/:id
-router.get('/:id', async (req, res, next) => {
+// 특정 렌탈상품 불러오기 /rental/detail/:id
+router.get('/detail/:id', async (req, res) => {
    try {
       const id = req.params.id
 
@@ -269,39 +262,41 @@ router.get('/:id', async (req, res, next) => {
       })
 
       if (!rentalItem) {
-         const error = new Error('해당 렌탈상품을 찾을 수 없습니다.')
-         error.status = 404
-         return next(error)
+         return res.status(404).json({
+            success: false,
+            message: '해당 렌탈상품을 찾을 수 없습니다.',
+         })
       }
 
-      res.json({
+      res.status(200).json({
          success: true,
          message: '렌탈상품 조회 성공',
-         rentalItem,
+         data: rentalItem,
       })
    } catch (error) {
-      error.status = 500
-      error.message = '렌탈상품을 불러오는 중 오류가 발생했습니다.'
-      next(error)
+      console.error('렌탈상품 상세 조회 오류:', error)
+      res.status(500).json({
+         success: false,
+         message: '렌탈상품을 불러오는데 실패했습니다.',
+         error: error.message,
+      })
    }
 })
 
-// 렌탈상품 수정
-router.put('/:id', upload.array('img'), async (req, res, next) => {
-   const transaction = await sequelize.transaction()
-
+// 렌탈 상품 수정 /rental/edit/:id
+router.put('/edit/:id', upload.array('img'), async (req, res) => {
    try {
       const id = req.params.id
-      const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus, keywords } = req.body
+      const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus, keywords, deleteImages } = req.body
 
       // 렌탈상품이 존재하는지 확인
-      const rentalItem = await RentalItem.findByPk(id, { transaction })
+      const rentalItem = await RentalItem.findByPk(id)
 
       if (!rentalItem) {
-         const error = new Error('해당 렌탈상품을 찾을 수 없습니다.')
-         error.status = 404
-         await transaction.rollback()
-         return next(error)
+         return res.status(404).json({
+            success: false,
+            message: '해당 렌탈상품을 찾을 수 없습니다.',
+         })
       }
 
       // 렌탈상품 정보 업데이트
@@ -312,13 +307,40 @@ router.put('/:id', upload.array('img'), async (req, res, next) => {
       if (rentalDetail !== undefined) updateData.rentalDetail = rentalDetail
       if (rentalStatus !== undefined) updateData.rentalStatus = rentalStatus
 
-      await rentalItem.update(updateData, { transaction })
+      await rentalItem.update(updateData)
+
+      // 삭제할 이미지가 있을 경우 처리
+      if (deleteImages && deleteImages.length > 0) {
+         // 삭제할 이미지 ID들 처리
+         const imageIdsToDelete = JSON.parse(deleteImages) // JSON으로 받은 삭제할 이미지 리스트
+
+         // 해당 이미지들을 데이터베이스에서 삭제
+         const imagesToDelete = await RentalImg.findAll({
+            where: {
+               id: { [Op.in]: imageIdsToDelete },
+            },
+         })
+
+         // 파일 시스템에서 이미지 파일 삭제
+         imagesToDelete.forEach((image) => {
+            const filePath = path.join(__dirname, '..', 'uploads', image.url.replace('/uploads/', '').replace('/', ''))
+            try {
+               fs.unlinkSync(filePath) // 이미지 파일 삭제
+            } catch (err) {
+               console.log('파일 삭제 실패:', err.message)
+            }
+         })
+
+         // 이미지 DB에서 삭제
+         await RentalImg.destroy({
+            where: {
+               id: { [Op.in]: imageIdsToDelete },
+            },
+         })
+      }
 
       // 수정할 이미지가 존재하는 경우
       if (req.files && req.files.length > 0) {
-         // 기존 이미지 삭제
-         await RentalImg.destroy({ where: { rentalItemId: id }, transaction })
-
          // 새 이미지 추가
          const imageData = req.files.map((file) => ({
             url: `/${file.filename}`, //이미지 경로
@@ -327,13 +349,13 @@ router.put('/:id', upload.array('img'), async (req, res, next) => {
          }))
 
          // 이미지 여러개 insert
-         await RentalImg.bulkCreate(imageData, { transaction })
+         await RentalImg.bulkCreate(imageData)
       }
 
       // 키워드 업데이트
       if (keywords !== undefined) {
          // 기존 키워드 연결 삭제
-         await ItemKeyword.destroy({ where: { rentalItemId: id }, transaction })
+         await ItemKeyword.destroy({ where: { rentalItemId: id } })
 
          if (keywords) {
             const keywordArray = keywords
@@ -342,39 +364,52 @@ router.put('/:id', upload.array('img'), async (req, res, next) => {
                .filter((k) => k)
 
             for (const keywordName of keywordArray) {
-               const [keyword] = await Keyword.findOrCreate(
-                  {
-                     where: { name: keywordName },
-                     defaults: { name: keywordName },
-                  },
-                  { transaction }
-               )
+               const [keyword] = await Keyword.findOrCreate({
+                  where: { name: keywordName },
+                  defaults: { name: keywordName },
+               })
 
-               await ItemKeyword.create(
-                  {
-                     rentalItemId: id,
-                     keywordId: keyword.id,
-                  },
-                  { transaction }
-               )
+               await ItemKeyword.create({
+                  rentalItemId: id,
+                  keywordId: keyword.id,
+               })
             }
          }
       }
 
-      // 트랜잭션 커밋
-      await transaction.commit()
+      // 수정된 렌탈상품 정보 조회
+      const updatedRentalItem = await RentalItem.findByPk(id, {
+         include: [
+            {
+               model: RentalImg,
+               as: 'rentalImgs',
+               attributes: ['id', 'url', 'alt'],
+            },
+            {
+               model: ItemKeyword,
+               include: [
+                  {
+                     model: Keyword,
+                     attributes: ['id', 'name'],
+                  },
+               ],
+               attributes: [], // ItemKeyword의 다른 필드는 제외
+            },
+         ],
+      })
 
-      res.json({
+      res.status(200).json({
          success: true,
-         message: '렌탈상품과 이미지가 성공적으로 수정되었습니다.',
+         message: '렌탈상품이 성공적으로 수정되었습니다.',
+         data: updatedRentalItem,
       })
    } catch (error) {
-      // 트랜잭션 롤백
-      await transaction.rollback()
-
-      error.status = 500
-      error.message = '렌탈상품 수정 중 오류가 발생했습니다.'
-      next(error)
+      console.error('렌탈상품 수정 오류:', error)
+      res.status(500).json({
+         success: false,
+         message: '렌탈상품 수정에 실패했습니다.',
+         error: error.message,
+      })
    }
 })
 

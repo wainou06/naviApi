@@ -68,7 +68,7 @@ app.use(passport.session())
 //라우터 등록
 app.use('/', indexRouter)
 app.use('/items', itemsRouter)
-app.use('/rental-items', rentalItemsRouter)
+app.use('/rental', rentalItemsRouter)
 app.use('/auth', authRouter)
 app.use('/keyword', keywordRouter)
 app.use('/matching', matchingRouter)
