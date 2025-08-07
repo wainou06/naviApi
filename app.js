@@ -17,20 +17,18 @@ const authRouter = require('./routes/auth')
 const passportConfig = require('./passport')
 const keywordRouter = require('./routes/keyword')
 
-const app = express()
-passportConfig()
-const PORT = process.env.PORT || 3000
-
 // 시퀄라이즈를 사용한 DB연결
 sequelize
    .sync({ force: false, alter: true })
    .then(() => {
       console.log('데이터베이스 연결 성공')
-      console.log('생성된 테이블들:', Object.keys(sequelize.models))
    })
    .catch((err) => {
       console.log('데이터베이스 연결 실패:', err)
-   })
+
+const app = express()
+passportConfig()
+app.set('port', process.env.PORT || 8002)
 
 app.use(
    cors({
@@ -67,6 +65,7 @@ app.use('/items', itemsRouter)
 app.use('/rental-items', rentalItemsRouter)
 app.use('/auth', authRouter)
 app.use('/keyword', keywordRouter)
+app.use('/matching', matchingRouter)
 
 app.use((req, res, next) => {
    const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`)
@@ -87,10 +86,6 @@ app.use((err, req, res, next) => {
    })
 })
 
-app.listen(PORT, () => {
-   console.log(`서버가 작동 중 입니다. http://localhost:${PORT}`)
+app.listen(app.get('port'), () => {
+   console.log(`서버가 작동 중 입니다. http://localhost:${app.get('port')}`)
 })
-
-// app.listen(app.get('port'), () => {
-//    console.log(`서버가 작동 중 입니다. http://localhost:${PORT}`)
-// })
