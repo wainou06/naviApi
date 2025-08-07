@@ -176,9 +176,9 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res) => {
 
       // 상태값 매핑 (프론트엔드 값을 DB ENUM 값으로 변환)
       const statusMapping = {
-         available: 'SELL',
-         sold: 'SOLD_OUT',
-         on_sale: 'ON_SALE',
+         sell: 'SELL',
+         sold_out: 'SOLD_OUT',
+         reservation: 'RESERVATION',
       }
 
       const mappedStatus = statusMapping[status] || status || 'SELL'
