@@ -1,22 +1,17 @@
 const express = require('express')
-const path = require('path')
-const cookieParser = require('cookie-parser')
+const cors = require('cors')
 const morgan = require('morgan')
+const cookieParser = require('cookie-parser')
 const session = require('express-session')
 const passport = require('passport')
+const path = require('path')
 require('dotenv').config()
-const cors = require('cors')
-
-// 구글 관련 추가 ↓
-require('./server/passport')
-require('./passport')
-
-// swagger 추가
 const { swaggerUi, swaggerSpec } = require('./swagger')
 
 const indexRouter = require('./routes')
+const keywordRouter = require('./routes/keyword')
+const matchingRouter = require('./routes/matching')
 const authRouter = require('./routes/auth')
-
 const { sequelize } = require('./models')
 const passportConfig = require('./passport')
 
@@ -30,12 +25,12 @@ sequelize
       console.log('데이터베이스 연결 성공')
    })
    .catch((err) => {
-      console.error(err)
+      console.log(err)
    })
 
 app.use(
    cors({
-      origin: process.env.FRONTEND_APP_URL,
+      origin: 'http://localhost:5173',
       credentials: true,
    })
 )
@@ -44,24 +39,24 @@ app.use(express.static(path.join(__dirname, 'uploads')))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser(process.env.COOKIE_SECRET))
-const sessionMiddleware = session({
-   resave: false,
-   saveUninitialized: true,
-   secret: process.env.COOKIE_SECRET,
-   cookie: {
-      httpOnly: true,
-      secure: false,
-   },
-})
-app.use(sessionMiddleware)
-
-// swagger 추가
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.use(
+   session({
+      resave: false,
+      saveUninitialized: true,
+      secret: process.env.COOKIE_SECRET,
+      cookie: {
+         httpOnly: true,
+         secure: false,
+      },
+   })
+)
 
 app.use(passport.initialize())
 app.use(passport.session())
 
 app.use('/', indexRouter)
+app.use('/keyword', keywordRouter)
+app.use('/matching', matchingRouter)
 app.use('/auth', authRouter)
 
 app.use((req, res, next) => {
@@ -71,12 +66,10 @@ app.use((req, res, next) => {
 })
 
 app.use((err, req, res, next) => {
+   console.error(err)
+
    const statusCode = err.status || 500
    const errorMessage = err.message || '서버 내부 오류'
-
-   if (process.env.NODE_ENV === 'development') {
-      console.log(err)
-   }
 
    res.status(statusCode).json({
       success: false,
@@ -86,5 +79,5 @@ app.use((err, req, res, next) => {
 })
 
 app.listen(app.get('port'), () => {
-   console.log(app.get('port'), '번 포트에서 대기중')
+   console.log(`서버가 작동 중 입니다. http://localhost:${app.get('port')}`)
 })
