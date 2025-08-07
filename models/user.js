@@ -19,15 +19,15 @@ module.exports = class User extends Sequelize.Model {
             },
             password: {
                type: Sequelize.STRING(255),
-               allowNull: false,
+               allowNull: true,
             },
             phone: {
                type: Sequelize.STRING(255),
-               allowNull: false,
+               allowNull: true,
             },
             address: {
                type: Sequelize.STRING(255),
-               allowNull: false,
+               allowNull: true,
             },
             access: {
                type: Sequelize.ENUM('MANAGER', 'USER'),

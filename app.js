@@ -18,6 +18,10 @@ const passportConfig = require('./passport')
 const keywordRouter = require('./routes/keyword')
 const matchingRouter = require('./routes/matching')
 
+// 구글 연동을 위한 passport 연결
+require('./server/passport')
+require('./passport')
+
 // 시퀄라이즈를 사용한 DB연결
 sequelize
    .sync({ force: false, alter: true })
