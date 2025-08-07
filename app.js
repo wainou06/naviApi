@@ -16,6 +16,7 @@ const rentalItemsRouter = require('./routes/rentalItems')
 const authRouter = require('./routes/auth')
 const passportConfig = require('./passport')
 const keywordRouter = require('./routes/keyword')
+const matchingRouter = require('./routes/matching')
 
 // 시퀄라이즈를 사용한 DB연결
 sequelize
