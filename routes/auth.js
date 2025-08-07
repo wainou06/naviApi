@@ -78,7 +78,7 @@ router.post('/join', isNotLoggedIn, async (req, res, next) => {
          user: {
             id: newUser.id,
             name: newUser.name,
-            role: newUser.role,
+            access: newUser.access,
          },
       })
    } catch (error) {
@@ -143,7 +143,7 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
                id: user.id,
                name: user.name,
                nick: user.nick,
-               role: user.role,
+               access: user.access,
             },
          })
       })
@@ -215,7 +215,7 @@ router.get('/status', async (req, res, next) => {
                id: req.user.id,
                name: req.user.name,
                nick: req.user.nick,
-               role: req.user.role,
+               access: req.user.access,
             },
          })
       } else {
