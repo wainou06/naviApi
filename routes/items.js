@@ -174,20 +174,38 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res) => {
          })
       }
 
-      // 상태값 매핑 (프론트엔드 값을 DB ENUM 값으로 변환)
-      const statusMapping = {
-         sell: 'SELL',
-         sold_out: 'SOLD_OUT',
-         reservation: 'RESERVATION',
+      // status가 undefined나 null인 경우 처리
+      if (!status) {
+         console.log('status가 없어서 SELL로 설정')
+         var mappedStatus = 'SELL'
+      } else {
+         // 공백 제거 후 처리
+         const cleanStatus = status.toString().trim()
+         console.log('공백 제거 후 status:', cleanStatus)
+
+         // 상태값 매핑
+         const statusMapping = {
+            sell: 'SELL',
+            sold_out: 'SOLD_OUT',
+            soldout: 'SOLD_OUT',
+            reservation: 'RESERVATION',
+            SELL: 'SELL',
+            SOLD_OUT: 'SOLD_OUT',
+            RESERVATION: 'RESERVATION',
+         }
+
+         mappedStatus = statusMapping[cleanStatus] || 'SELL'
       }
 
-      const mappedStatus = statusMapping[status] || status || 'SELL'
+      console.log('최종 매핑된 status:', mappedStatus)
+      console.log('최종 status 길이:', mappedStatus.length)
+      console.log('최종 status JSON:', JSON.stringify(mappedStatus))
 
       // 상품 생성
       const newItem = await Item.create({
          itemNm: name,
          price: parseInt(price),
-         itemSellStatus: mappedStatus,
+         itemSellStatus: mappedStatus, // 검증된 status 값 사용
          itemDetail: content,
          userId: req.user.id,
       })
@@ -198,14 +216,14 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res) => {
             return Img.create({
                originName: file.originalname,
                imgUrl: `/uploads/${file.filename}`,
-               field: index === 0 ? 'Y' : 'N', // 첫 번째 이미지를 대표 이미지로 설정
+               field: index === 0 ? 'Y' : 'N',
                itemId: newItem.id,
             })
          })
          await Promise.all(imagePromises)
       }
 
-      // 키워드 저장 (키워드가 있는 경우)
+      // 키워드 저장
       if (keywords) {
          const keywordArray = keywords
             .split(',')
@@ -213,23 +231,21 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res) => {
             .filter((k) => k)
 
          for (const keywordName of keywordArray) {
-            // 키워드가 이미 존재하는지 확인, 없으면 생성
             const [keyword] = await Keyword.findOrCreate({
                where: { name: keywordName },
                defaults: { name: keywordName },
             })
 
-            // ItemKeyword 관계 생성
             await ItemKeyword.create({
                itemId: newItem.id,
                keywordId: keyword.id,
                startAt: new Date(),
-               endAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1년 후
+               endAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             })
          }
       }
 
-      // 생성된 상품 정보를 다시 조회 (관련 데이터 포함)
+      // 생성된 상품 정보 조회
       const createdItem = await Item.findByPk(newItem.id, {
          include: [
             {
@@ -256,15 +272,10 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res) => {
          data: createdItem,
       })
    } catch (error) {
-      // 로그인 상태가 아닐 때
-      if (error.message && error.message.includes('로그인 후 상품을 등록할 수 있습니다.')) {
-         return res.status(403).json({
-            success: false,
-            message: '로그인 후 상품을 등록할 수 있습니다.',
-         })
-      }
+      console.error('POST /items error:', error)
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
 
-      // 그 외 다른 오류 처리
       res.status(500).json({
          success: false,
          message: '상품 등록에 실패했습니다.',
@@ -425,7 +436,6 @@ router.delete('/:id', async (req, res) => {
       }
 
       // 관련 데이터들도 함께 삭제 (Cascade 설정으로 자동 삭제됨)
-      // 하지만 명시적으로 삭제할 수도 있습니다.
       await ItemKeyword.destroy({
          where: { itemId: id },
       })
