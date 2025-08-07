@@ -28,6 +28,7 @@ passport.use(
                   googleId: profile.id,
                   email: profile.emails[0].value,
                   name: profile.displayName,
+                  nick: profile.displayName,
                })
             }
 
