@@ -13,7 +13,7 @@ module.exports = class Item extends Sequelize.Model {
                allowNull: false,
             },
             itemSellStatus: {
-               type: Sequelize.ENUM('SELL', 'SOLD_OUT', 'ON_SALE'),
+               type: Sequelize.ENUM('SELL', 'SOLD_OUT', 'RESERVATION'),
                allowNull: false,
             },
             itemDetail: {
