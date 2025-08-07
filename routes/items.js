@@ -295,9 +295,9 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res) => {
       if (status !== undefined) {
          // 상태값 매핑
          const statusMapping = {
-            available: 'SELL',
-            sold: 'SOLD_OUT',
-            on_sale: 'ON_SALE',
+            sell: 'SELL',
+            sold_out: 'SOLD_OUT',
+            reservation: 'RESERVATION',
          }
          updateData.itemSellStatus = statusMapping[status] || status
       }

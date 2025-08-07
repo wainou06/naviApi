@@ -34,7 +34,6 @@ module.exports = class User extends Sequelize.Model {
                allowNull: false,
                defaultValue: 'USER',
             },
-            // 구글 아이디 컬럼 추가 (일반 유저를 위한 null 허용)
             googleId: {
                type: Sequelize.STRING(255),
                allowNull: true,
@@ -53,22 +52,26 @@ module.exports = class User extends Sequelize.Model {
          }
       )
    }
+
    static associate(db) {
-      User.hasMany(db.Order, {
+      // User -> Order (1:N)
+      db.User.hasMany(db.Order, {
          foreignKey: 'userId',
          sourceKey: 'id',
+         as: 'orders',
       })
-      User.hasMany(db.RentalOrder, {
+
+      // User -> RentalOrder (1:N)
+      db.User.hasMany(db.RentalOrder, {
          foreignKey: 'userId',
          sourceKey: 'id',
+         as: 'rentalOrders',
       })
-      User.hasMany(db.Rating, {
-         foreignKey: 'fromUserId',
+
+      db.User.hasMany(db.Rating, {
+         foreignKey: 'userId',
          sourceKey: 'id',
-      })
-      User.hasMany(db.Rating, {
-         foreignKey: 'toUserId',
-         sourceKey: 'id',
+         as: 'ratings',
       })
 
       // User -> Item (1:N) (유저와 아이템 관계 추가)

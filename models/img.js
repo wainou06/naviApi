@@ -16,6 +16,15 @@ module.exports = class Img extends Sequelize.Model {
                type: Sequelize.ENUM('Y', 'N'),
                allowNull: false,
             },
+            itemId: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+               references: {
+                  model: 'Items',
+                  key: 'id',
+                  onDelete: 'CASCADE',
+               },
+            },
          },
          {
             sequelize,
@@ -31,9 +40,11 @@ module.exports = class Img extends Sequelize.Model {
    }
 
    static associate(db) {
-      Img.belongsTo(db.Item, {
+      // Img -> Item (N:1)
+      db.Img.belongsTo(db.Item, {
          foreignKey: 'itemId',
          targetKey: 'id',
+         as: 'item', // 필드 이름 일치
       })
    }
 }

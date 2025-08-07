@@ -4,12 +4,12 @@ module.exports = class RentalOrder extends Sequelize.Model {
    static init(sequelize) {
       return super.init(
          {
-            quantity: {
-               type: Sequelize.INTEGER,
-               allowNull: false,
-            },
             orderStatus: {
                type: Sequelize.STRING(255),
+               allowNull: false,
+            },
+            quantity: {
+               type: Sequelize.INTEGER,
                allowNull: false,
             },
             useStart: {
@@ -19,6 +19,17 @@ module.exports = class RentalOrder extends Sequelize.Model {
             useEnd: {
                type: Sequelize.DATE,
                allowNull: false,
+            },
+
+            userId: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+               references: {
+                  model: 'Users',
+                  key: 'id',
+                  onUpdate: 'CASCADE',
+                  onDelete: 'CASCADE',
+               },
             },
          },
          {
@@ -35,17 +46,25 @@ module.exports = class RentalOrder extends Sequelize.Model {
    }
 
    static associate(db) {
-      RentalOrder.hasMany(db.RentalOrderItem, {
-         foreignKey: 'rentalOrderId',
-         sourceKey: 'id',
-      })
-      RentalOrder.hasOne(db.Rating, {
-         foreignKey: 'rentalOrderId',
-         sourceKey: 'id',
-      })
-      RentalOrder.belongsTo(db.User, {
+      // RentalOrder -> User (N:1)
+      db.RentalOrder.belongsTo(db.User, {
          foreignKey: 'userId',
          targetKey: 'id',
+         as: 'user',
+      })
+
+      // RentalOrder <-> RentalItem
+      db.RentalOrder.belongsToMany(db.RentalItem, {
+         through: db.RentalOrderItem,
+         foreignKey: 'rentalOrderId',
+         otherKey: 'rentalItemId',
+         as: 'rentalItems',
+      })
+
+      db.RentalOrder.hasOne(db.Rating, {
+         foreignKey: 'rentalOrderId',
+         sourceKey: 'id',
+         as: 'ratings',
       })
    }
 }

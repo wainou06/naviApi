@@ -16,6 +16,16 @@ module.exports = class RentalImg extends Sequelize.Model {
                type: Sequelize.ENUM('Y', 'N'),
                allowNull: false,
             },
+            rentalItemId: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+               references: {
+                  model: 'RentalItems',
+                  key: 'id',
+                  onUpdate: 'CASCADE',
+                  onDelete: 'CASCADE',
+               },
+            },
          },
          {
             sequelize,
@@ -31,9 +41,11 @@ module.exports = class RentalImg extends Sequelize.Model {
    }
 
    static associate(db) {
-      RentalImg.belongsTo(db.RentalItem, {
+      // RentalImg -> RentalItem (N:1)
+      db.RentalImg.belongsTo(db.RentalItem, {
          foreignKey: 'rentalItemId',
          targetKey: 'id',
+         as: 'rentalItem',
       })
    }
 }

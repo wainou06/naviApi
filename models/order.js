@@ -8,6 +8,14 @@ module.exports = class Order extends Sequelize.Model {
                type: Sequelize.STRING(255),
                allowNull: false,
             },
+            userId: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+               references: {
+                  model: 'Users',
+                  key: 'id',
+               },
+            },
          },
          {
             sequelize,
@@ -23,17 +31,22 @@ module.exports = class Order extends Sequelize.Model {
    }
 
    static associate(db) {
-      Order.hasOne(db.Item, {
-         foreignKey: 'orderId',
-         sourceKey: 'id',
-      })
-      Order.hasOne(db.Rating, {
-         foreignKey: 'orderId',
-         sourceKey: 'id',
-      })
-      Order.belongsTo(db.User, {
+      // Order -> User (N:1)
+      db.Order.belongsTo(db.User, {
          foreignKey: 'userId',
          targetKey: 'id',
+         as: 'user',
+      })
+
+      // Order -> Item (1:N)
+      db.Order.hasOne(db.Item, {
+         foreignKey: 'orderId',
+         sourceKey: 'id',
+         as: 'items',
+      })
+      db.Order.hasOne(db.Rating, {
+         foreignKey: 'orderId',
+         sourceKey: 'id',
       })
    }
 }

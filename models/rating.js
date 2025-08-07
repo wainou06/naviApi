@@ -7,10 +7,44 @@ module.exports = class Rating extends Sequelize.Model {
             rating: {
                type: Sequelize.INTEGER,
                allowNull: false,
+               validate: {
+                  min: 1,
+                  max: 5,
+               },
             },
             comment: {
                type: Sequelize.TEXT,
                allowNull: false,
+            },
+            userId: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+               references: {
+                  model: 'Users',
+                  key: 'id',
+               },
+               onUpdate: 'CASCADE',
+               onDelete: 'CASCADE',
+            },
+            orderId: {
+               type: Sequelize.INTEGER,
+               allowNull: true, // null 허용 (렌탈주문일 수도 있으니)
+               references: {
+                  model: 'Orders',
+                  key: 'id',
+               },
+               onUpdate: 'CASCADE',
+               onDelete: 'CASCADE',
+            },
+            rentalOrderId: {
+               type: Sequelize.INTEGER,
+               allowNull: true, // null 허용 (일반주문일 수도 있으니)
+               references: {
+                  model: 'RentalOrders',
+                  key: 'id',
+               },
+               onUpdate: 'CASCADE',
+               onDelete: 'CASCADE',
             },
          },
          {
@@ -27,6 +61,7 @@ module.exports = class Rating extends Sequelize.Model {
    }
 
    static associate(db) {
+      // Rating -> User (N:1)
       Rating.belongsTo(db.User, {
          foreignKey: 'fromUserId',
          targetKey: 'id',
@@ -35,13 +70,18 @@ module.exports = class Rating extends Sequelize.Model {
          foreignKey: 'toUserId',
          targetKey: 'id',
       })
-      Rating.belongsTo(db.Order, {
+      // Rating -> Order (N:1)
+      db.Rating.belongsTo(db.Order, {
          foreignKey: 'orderId',
          targetKey: 'id',
+         as: 'order',
       })
-      Rating.belongsTo(db.RentalOrder, {
+
+      // Rating -> RentalOrder (N:1)
+      db.Rating.belongsTo(db.RentalOrder, {
          foreignKey: 'rentalOrderId',
          targetKey: 'id',
+         as: 'rentalOrder',
       })
    }
 }
