@@ -24,7 +24,7 @@ require('./passport')
 
 // 시퀄라이즈를 사용한 DB연결
 sequelize
-   .sync({ force: false, alter: true })
+   .sync({ force: false })
    .then(() => {
       console.log('데이터베이스 연결 성공')
    })
