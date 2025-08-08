@@ -1,10 +1,7 @@
 require('dotenv').config()
-
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const passport = require('passport')
-
 const { User } = require('../models')
-
 passport.use(
    new GoogleStrategy(
       {
@@ -18,11 +15,8 @@ passport.use(
          try {
             // console.log('Google profile:', profile)
             // console.log('Access Token:', accessToken)
-
             // console.log(profile)
-
             let user = await User.findOne({ where: { googleId: profile.id } })
-
             if (!user) {
                user = await User.create({
                   googleId: profile.id,
@@ -31,7 +25,6 @@ passport.use(
                   nick: profile.displayName,
                })
             }
-
             return done(null, user)
          } catch (err) {
             console.error('GoogleStrategy error:', err)
@@ -40,15 +33,12 @@ passport.use(
       }
    )
 )
-
 passport.serializeUser((user, done) => {
    done(null, user)
 })
-
 passport.deserializeUser((user, done) => {
    done(null, user)
 })
-
 // passport.authenticate('google', {
 //    failureRedirect: '/login',
 //    session: false,
