@@ -215,6 +215,7 @@ router.get('/status', async (req, res, next) => {
                id: req.user.id,
                name: req.user.name,
                nick: req.user.nick,
+               email: req.user.email,
                access: req.user.access,
             },
          })
