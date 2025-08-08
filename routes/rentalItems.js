@@ -248,7 +248,7 @@ router.get('/detail/:id', async (req, res) => {
             {
                model: RentalImg,
                as: 'rentalImgs',
-               attributes: ['id', 'url', 'alt'],
+               attributes: ['id', 'imgUrl', 'originName', 'field'],
             },
             {
                model: ItemKeyword,
