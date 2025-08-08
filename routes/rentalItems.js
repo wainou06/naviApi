@@ -48,7 +48,6 @@ const upload = multer({
 // 렌탈상품 등록 /rental/create (미들웨어 추가)
 router.post('/', isLoggedIn, upload.array('img'), async (req, res) => {
    try {
-      // 모델 필드명에 맞게 수정
       const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus = 'Y', keywords } = req.body
 
       // 필수 필드 검증
@@ -72,10 +71,13 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res) => {
       let images = []
       if (req.files && req.files.length > 0) {
          // RentalImg 테이블에 insert할 객체 생성
-         const imageData = req.files.map((file) => ({
-            url: `/${file.filename}`, //이미지 경로
+         const imageData = req.files.map((file, index) => ({
+            // index 추가
+            imgUrl: `/uploads/${file.filename}`, //이미지 경로
             alt: rentalItemNm, // 상품명을 alt로 사용
+            originName: file.originalname,
             rentalItemId: rentalItem.id, // 생성된 렌탈상품 ID 연결
+            field: index === 0 ? 'Y' : 'N', // 첫 번째 이미지만 대표 이미지로 설정
          }))
 
          // 이미지 여러개 insert
@@ -160,7 +162,7 @@ router.get('/list', async (req, res) => {
             {
                model: RentalImg,
                as: 'rentalImgs',
-               attributes: ['id', 'url', 'alt'],
+               attributes: ['id', 'imgUrl'],
             },
             {
                model: ItemKeyword,
@@ -343,7 +345,7 @@ router.put('/edit/:id', upload.array('img'), async (req, res) => {
       if (req.files && req.files.length > 0) {
          // 새 이미지 추가
          const imageData = req.files.map((file) => ({
-            url: `/${file.filename}`, //이미지 경로
+            imgUrl: `/uploads/${file.filename}`, //이미지 경로
             alt: rentalItemNm || rentalItem.rentalItemNm, // 상품명을 alt로 사용
             rentalItemId: rentalItem.id, // 렌탈상품 ID 연결
          }))
