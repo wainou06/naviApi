@@ -54,6 +54,16 @@ router.put('/:id', isLoggedIn, isManager, async (req, res, next) => {
          return next(error)
       }
 
+      const exKeyword = await Keyword.findOne({
+         where: { name: req.body.name },
+      })
+
+      if (exKeyword) {
+         const error = new Error('이미 키워드가 존재합니다.')
+         error.status = 404
+         return next(error)
+      }
+
       await keyword.update({
          name: req.body.name,
       })
@@ -76,10 +86,7 @@ router.put('/:id', isLoggedIn, isManager, async (req, res, next) => {
 
 router.get('/', isLoggedIn, async (req, res, next) => {
    try {
-      const count = await Keyword.count()
-      const keywords = await Keyword.findAll({
-         // order: [['createdAt', 'DESC']],
-      })
+      const keywords = await Keyword.findAll({})
 
       console.log('keywords: ', keywords)
 

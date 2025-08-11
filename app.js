@@ -20,6 +20,7 @@ const passportConfig = require('./passport')
 const keywordRouter = require('./routes/keyword')
 const matchingRouter = require('./routes/matching')
 const priceProposalRouter = require('./routes/priceproposal')
+const infoRouter = require('./routes/info')
 
 // 구글 연동을 위한 passport 연결
 require('./server/passport')
@@ -78,6 +79,7 @@ app.use('/auth', authRouter)
 app.use('/keyword', keywordRouter)
 app.use('/matching', matchingRouter)
 app.use('/priceProposal', priceProposalRouter)
+app.use('/info', infoRouter)
 
 app.use((req, res, next) => {
    const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`)
