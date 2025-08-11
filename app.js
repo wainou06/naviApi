@@ -12,11 +12,14 @@ const { swaggerUi, swaggerSpec } = require('./swagger')
 const indexRouter = require('./routes')
 const { sequelize } = require('./models')
 const itemsRouter = require('./routes/items')
+const orderRouter = require('./routes/order')
 const rentalItemsRouter = require('./routes/rentalItems')
+const rentalOrderRouter = require('./routes/rentalOrder')
 const authRouter = require('./routes/auth')
 const passportConfig = require('./passport')
 const keywordRouter = require('./routes/keyword')
 const matchingRouter = require('./routes/matching')
+const priceProposalRouter = require('./routes/priceproposal')
 
 // 구글 연동을 위한 passport 연결
 require('./server/passport')
@@ -68,10 +71,13 @@ app.use(passport.session())
 //라우터 등록
 app.use('/', indexRouter)
 app.use('/items', itemsRouter)
+app.use('/order', orderRouter)
 app.use('/rental', rentalItemsRouter)
+app.use('/rentalOrder', rentalOrderRouter)
 app.use('/auth', authRouter)
 app.use('/keyword', keywordRouter)
 app.use('/matching', matchingRouter)
+app.use('/priceProposal', priceProposalRouter)
 
 app.use((req, res, next) => {
    const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`)

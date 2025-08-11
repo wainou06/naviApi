@@ -8,10 +8,6 @@ module.exports = class RentalOrder extends Sequelize.Model {
                type: Sequelize.STRING(255),
                allowNull: false,
             },
-            quantity: {
-               type: Sequelize.INTEGER,
-               allowNull: false,
-            },
             useStart: {
                type: Sequelize.DATE,
                allowNull: false,
@@ -20,7 +16,6 @@ module.exports = class RentalOrder extends Sequelize.Model {
                type: Sequelize.DATE,
                allowNull: false,
             },
-
             userId: {
                type: Sequelize.INTEGER,
                allowNull: false,
@@ -53,7 +48,7 @@ module.exports = class RentalOrder extends Sequelize.Model {
          as: 'user',
       })
 
-      // RentalOrder <-> RentalItem
+      // RentalOrder <-> RentalItem (다대다)
       db.RentalOrder.belongsToMany(db.RentalItem, {
          through: db.RentalOrderItem,
          foreignKey: 'rentalOrderId',
@@ -61,10 +56,20 @@ module.exports = class RentalOrder extends Sequelize.Model {
          as: 'rentalItems',
       })
 
+      // RentalOrder -> RentalOrderItem (1:N) : CASCADE 설정 추가
+      db.RentalOrder.hasMany(db.RentalOrderItem, {
+         foreignKey: 'rentalOrderId',
+         sourceKey: 'id',
+         onDelete: 'CASCADE',
+         hooks: true,
+         as: 'rentalOrderItems',
+      })
+
+      // 대여 주문에 대한 평점(옵션)
       db.RentalOrder.hasOne(db.Rating, {
          foreignKey: 'rentalOrderId',
          sourceKey: 'id',
-         as: 'ratings',
+         as: 'rating',
       })
    }
 }
