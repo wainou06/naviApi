@@ -5,8 +5,19 @@ module.exports = class Order extends Sequelize.Model {
       return super.init(
          {
             orderStatus: {
-               type: Sequelize.STRING(255),
+               type: Sequelize.ENUM(
+                  'PAYMENT_PENDING', // 결제 대기 중 (거래 제안 대기)
+                  'PAID', // 결제 완료 (거래 진행 중)
+                  'CANCELLED', // 거래 취소
+                  'COMPLETED' // 거래 완료 (물건 인수인계 완료)
+               ),
                allowNull: false,
+               defaultValue: 'PAYMENT_PENDING',
+            },
+            purchaseMethod: {
+               type: Sequelize.ENUM('shipping', 'meetup', 'other'),
+               allowNull: false,
+               defaultValue: 'meetup',
             },
             userId: {
                type: Sequelize.INTEGER,
@@ -31,22 +42,22 @@ module.exports = class Order extends Sequelize.Model {
    }
 
    static associate(db) {
-      // Order -> User (N:1)
       db.Order.belongsTo(db.User, {
          foreignKey: 'userId',
          targetKey: 'id',
          as: 'user',
       })
 
-      // Order -> Item (1:N)
       db.Order.hasOne(db.Item, {
          foreignKey: 'orderId',
          sourceKey: 'id',
-         as: 'items',
+         as: 'item',
       })
+
       db.Order.hasOne(db.Rating, {
          foreignKey: 'orderId',
          sourceKey: 'id',
+         as: 'rating',
       })
    }
 }

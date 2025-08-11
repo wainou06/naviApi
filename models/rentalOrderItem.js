@@ -24,6 +24,11 @@ module.exports = class RentalOrderItem extends Sequelize.Model {
                   onDelete: 'CASCADE',
                },
             },
+            quantity: {
+               type: Sequelize.INTEGER,
+               allowNull: false,
+               defaultValue: 1,
+            },
          },
          {
             sequelize,
@@ -39,14 +44,12 @@ module.exports = class RentalOrderItem extends Sequelize.Model {
    }
 
    static associate(db) {
-      // RentalOrderItem -> RentalOrder (N:1)
       db.RentalOrderItem.belongsTo(db.RentalOrder, {
          foreignKey: 'rentalOrderId',
          targetKey: 'id',
          as: 'rentalOrder',
       })
 
-      // RentalOrderItem -> RentalItem (N:1)
       db.RentalOrderItem.belongsTo(db.RentalItem, {
          foreignKey: 'rentalItemId',
          targetKey: 'id',

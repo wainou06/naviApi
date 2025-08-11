@@ -52,7 +52,7 @@ module.exports = class Item extends Sequelize.Model {
    }
 
    static associate(db) {
-      // Item -> Order (N:1)
+      // Item -> Order (1:1)
       db.Item.belongsTo(db.Order, {
          foreignKey: 'orderId',
          targetKey: 'id',
@@ -77,6 +77,18 @@ module.exports = class Item extends Sequelize.Model {
          foreignKey: 'userId',
          targetKey: 'id',
          as: 'user',
+      })
+
+      db.Item.hasOne(db.Chat, {
+         foreignKey: 'itemId',
+         sourceKey: 'id',
+         as: 'chat',
+      })
+
+      db.Item.hasMany(db.PriceProposal, {
+         foreignKey: 'itemId',
+         sourceKey: 'id',
+         as: 'priceProposals',
       })
    }
 }

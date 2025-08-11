@@ -87,5 +87,31 @@ module.exports = class User extends Sequelize.Model {
          sourceKey: 'id',
          as: 'rentalItems',
       })
+
+      // Buyer → Chat
+      db.User.hasMany(db.Chat, {
+         foreignKey: 'buyerId',
+         sourceKey: 'id',
+         as: 'buyChats',
+      })
+
+      // Seller → Chat
+      db.User.hasMany(db.Chat, {
+         foreignKey: 'sellerId',
+         sourceKey: 'id',
+         as: 'sellChats',
+      })
+
+      db.User.hasMany(db.Message, {
+         foreignKey: 'senderId',
+         sourceKey: 'id',
+         as: 'sentMessages',
+      })
+
+      db.User.hasMany(db.PriceProposal, {
+         foreignKey: 'userId',
+         sourceKey: 'id',
+         as: 'priceProposals',
+      })
    }
 }

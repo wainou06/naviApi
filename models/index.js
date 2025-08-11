@@ -13,6 +13,9 @@ const RentalOrder = require('./rentalOrder')
 const User = require('./user.js')
 const ItemKeyword = require('./itemKeyword.js')
 const RentalOrderItem = require('./rentalOrderItem.js')
+const Chat = require('./chat')
+const Message = require('./message')
+const PriceProposal = require('./priceproposal.js')
 
 const db = {}
 const sequelize = new Sequelize(config.database, config.username, config.password, config)
@@ -30,6 +33,9 @@ db.RentalOrder = RentalOrder
 db.User = User
 db.ItemKeyword = ItemKeyword
 db.RentalOrderItem = RentalOrderItem
+db.Chat = Chat
+db.Message = Message
+db.PriceProposal = PriceProposal
 
 Img.init(sequelize)
 Item.init(sequelize)
@@ -42,6 +48,9 @@ RentalOrder.init(sequelize)
 User.init(sequelize)
 ItemKeyword.init(sequelize)
 RentalOrderItem.init(sequelize)
+Chat.init(sequelize)
+Message.init(sequelize)
+PriceProposal.init(sequelize)
 
 Img.associate(db)
 Item.associate(db)
@@ -54,5 +63,8 @@ RentalOrder.associate(db)
 User.associate(db)
 ItemKeyword.associate(db)
 RentalOrderItem.associate(db)
+Chat.associate(db)
+Message.associate(db)
+PriceProposal.associate(db)
 
 module.exports = db
