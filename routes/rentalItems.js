@@ -45,8 +45,8 @@ const upload = multer({
    },
 })
 
-// 렌탈상품 등록 /rental/create (미들웨어 추가)
-router.post('/', isLoggedIn, upload.array('img'), async (req, res) => {
+// 렌탈상품 등록 /rental/create
+router.post('/', isLoggedIn, upload.array('img'), async (req, res, next) => {
    try {
       const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus = 'Y', keywords } = req.body
 
@@ -64,23 +64,20 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res) => {
          quantity,
          rentalDetail,
          rentalStatus,
-         userId: req.user.id, // 사용자 ID 추가
+         userId: req.user.id,
       })
 
       // 이미지(RentalImg) insert
       let images = []
       if (req.files && req.files.length > 0) {
-         // RentalImg 테이블에 insert할 객체 생성
          const imageData = req.files.map((file, index) => ({
-            // index 추가
-            imgUrl: `/uploads/${file.filename}`, //이미지 경로
-            alt: rentalItemNm, // 상품명을 alt로 사용
+            imgUrl: `/uploads/${file.filename}`,
+            alt: rentalItemNm,
             originName: file.originalname,
-            rentalItemId: rentalItem.id, // 생성된 렌탈상품 ID 연결
-            field: index === 0 ? 'Y' : 'N', // 첫 번째 이미지만 대표 이미지로 설정
+            rentalItemId: rentalItem.id,
+            field: index === 0 ? 'Y' : 'N',
          }))
 
-         // 이미지 여러개 insert
          images = await RentalImg.bulkCreate(imageData)
       }
 
@@ -92,13 +89,11 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res) => {
             .filter((k) => k)
 
          for (const keywordName of keywordArray) {
-            // 키워드가 존재하지 않으면 생성
             const [keyword] = await Keyword.findOrCreate({
                where: { name: keywordName },
                defaults: { name: keywordName },
             })
 
-            // 렌탈상품-키워드 연결 (ItemKeyword 테이블 사용)
             await ItemKeyword.create({
                rentalItemId: rentalItem.id,
                keywordId: keyword.id,
@@ -116,39 +111,30 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res) => {
       })
    } catch (error) {
       console.error('렌탈상품 등록 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '렌탈상품 등록에 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
-//GET /rental/list - 상품 목록 조회 (검색, 페이징 기능)
-router.get('/list', async (req, res) => {
+// GET /rental/list - 상품 목록 조회
+router.get('/list', async (req, res, next) => {
    try {
       const page = parseInt(req.query.page, 10) || 1
       const limit = parseInt(req.query.limit, 10) || 5
       const offset = (page - 1) * limit
 
-      // 상태, 상품명, 상품설명 값 가져오기
-      const searchTerm = req.query.keyword || '' // 사용자가 입력한 검색어
-      const searchCategory = req.query.searchCategory || 'rentalItemNm' // 상품명 or 상품설명으로 검색
-      const sellCategory = req.query.rentalStatus // 렌탈상품 상태
+      const searchTerm = req.query.keyword || ''
+      const searchCategory = req.query.searchCategory || 'rentalItemNm'
+      const sellCategory = req.query.rentalStatus
 
-      // 조건부 where 절을 만드는 객체
       const whereClause = {
-         // searchTerm이 존재하면 해당 검색어(searchTerm)가 포함된 검색 범주(searchCategory)를 조건으로 추가
          ...(searchTerm && {
             [Op.or]: [{ rentalItemNm: { [Op.like]: `%${searchTerm}%` } }, { rentalDetail: { [Op.like]: `%${searchTerm}%` } }],
          }),
-         //sellCategory가 존재하면 rentalStatus가 해당 상태와 일치하는 항목을 조건으로 추가
          ...(sellCategory && {
             rentalStatus: sellCategory,
          }),
       }
 
-      // 전체 렌탈상품 갯수
       const count = await RentalItem.count({
          where: whereClause,
       })
@@ -172,7 +158,7 @@ router.get('/list', async (req, res) => {
                      attributes: ['id', 'name'],
                   },
                ],
-               attributes: [], // ItemKeyword의 다른 필드는 제외
+               attributes: [],
             },
          ],
       })
@@ -192,23 +178,17 @@ router.get('/list', async (req, res) => {
       })
    } catch (error) {
       console.error('렌탈상품 목록 조회 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '전체 렌탈상품 리스트를 불러오는데 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
-//DELETE 렌탈상품 삭제 /rental/:id
-router.delete('/:id', async (req, res) => {
+// DELETE 렌탈상품 삭제 /rental/:id
+router.delete('/:id', async (req, res, next) => {
    try {
-      const id = req.params.id //렌탈상품id
+      const id = req.params.id
 
-      //렌탈상품이 존재하는지 확인
       const rentalItem = await RentalItem.findByPk(id)
 
-      //렌탈상품이 존재하지 않으면
       if (!rentalItem) {
          return res.status(404).json({
             success: false,
@@ -216,11 +196,9 @@ router.delete('/:id', async (req, res) => {
          })
       }
 
-      // 연관 데이터 삭제 (CASCADE로 설정되어 있다면 자동 삭제됨)
       await ItemKeyword.destroy({ where: { rentalItemId: id } })
       await RentalImg.destroy({ where: { rentalItemId: id } })
 
-      //렌탈상품 삭제
       await rentalItem.destroy()
 
       res.status(200).json({
@@ -229,21 +207,17 @@ router.delete('/:id', async (req, res) => {
       })
    } catch (error) {
       console.error('렌탈상품 삭제 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '렌탈상품 삭제에 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
 // 특정 렌탈상품 불러오기 /rental/detail/:id
-router.get('/detail/:id', async (req, res) => {
+router.get('/detail/:id', async (req, res, next) => {
    try {
       const id = req.params.id
 
       const rentalItem = await RentalItem.findOne({
-         where: { id }, // 특정 렌탈상품 id로 조회
+         where: { id },
          include: [
             {
                model: RentalImg,
@@ -258,7 +232,7 @@ router.get('/detail/:id', async (req, res) => {
                      attributes: ['id', 'name'],
                   },
                ],
-               attributes: [], // ItemKeyword의 다른 필드는 제외
+               attributes: [],
             },
          ],
       })
@@ -277,21 +251,16 @@ router.get('/detail/:id', async (req, res) => {
       })
    } catch (error) {
       console.error('렌탈상품 상세 조회 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '렌탈상품을 불러오는데 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
 // 렌탈 상품 수정 /rental/edit/:id
-router.put('/edit/:id', upload.array('img'), async (req, res) => {
+router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
    try {
       const id = req.params.id
       const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus, keywords, deleteImages } = req.body
 
-      // 렌탈상품이 존재하는지 확인
       const rentalItem = await RentalItem.findByPk(id)
 
       if (!rentalItem) {
@@ -313,27 +282,23 @@ router.put('/edit/:id', upload.array('img'), async (req, res) => {
 
       // 삭제할 이미지가 있을 경우 처리
       if (deleteImages && deleteImages.length > 0) {
-         // 삭제할 이미지 ID들 처리
-         const imageIdsToDelete = JSON.parse(deleteImages) // JSON으로 받은 삭제할 이미지 리스트
+         const imageIdsToDelete = JSON.parse(deleteImages)
 
-         // 해당 이미지들을 데이터베이스에서 삭제
          const imagesToDelete = await RentalImg.findAll({
             where: {
                id: { [Op.in]: imageIdsToDelete },
             },
          })
 
-         // 파일 시스템에서 이미지 파일 삭제
          imagesToDelete.forEach((image) => {
             const filePath = path.join(__dirname, '..', 'uploads', image.url.replace('/uploads/', '').replace('/', ''))
             try {
-               fs.unlinkSync(filePath) // 이미지 파일 삭제
+               fs.unlinkSync(filePath)
             } catch (err) {
                console.log('파일 삭제 실패:', err.message)
             }
          })
 
-         // 이미지 DB에서 삭제
          await RentalImg.destroy({
             where: {
                id: { [Op.in]: imageIdsToDelete },
@@ -343,20 +308,17 @@ router.put('/edit/:id', upload.array('img'), async (req, res) => {
 
       // 수정할 이미지가 존재하는 경우
       if (req.files && req.files.length > 0) {
-         // 새 이미지 추가
          const imageData = req.files.map((file) => ({
-            imgUrl: `/uploads/${file.filename}`, //이미지 경로
-            alt: rentalItemNm || rentalItem.rentalItemNm, // 상품명을 alt로 사용
-            rentalItemId: rentalItem.id, // 렌탈상품 ID 연결
+            imgUrl: `/uploads/${file.filename}`,
+            alt: rentalItemNm || rentalItem.rentalItemNm,
+            rentalItemId: rentalItem.id,
          }))
 
-         // 이미지 여러개 insert
          await RentalImg.bulkCreate(imageData)
       }
 
       // 키워드 업데이트
       if (keywords !== undefined) {
-         // 기존 키워드 연결 삭제
          await ItemKeyword.destroy({ where: { rentalItemId: id } })
 
          if (keywords) {
@@ -395,7 +357,7 @@ router.put('/edit/:id', upload.array('img'), async (req, res) => {
                      attributes: ['id', 'name'],
                   },
                ],
-               attributes: [], // ItemKeyword의 다른 필드는 제외
+               attributes: [],
             },
          ],
       })
@@ -407,12 +369,7 @@ router.put('/edit/:id', upload.array('img'), async (req, res) => {
       })
    } catch (error) {
       console.error('렌탈상품 수정 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '렌탈상품 수정에 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
-
 module.exports = router
