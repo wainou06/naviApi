@@ -235,7 +235,90 @@ router.get('/status', async (req, res, next) => {
    }
 })
 
-// 정보 수정
+/**
+ * @swagger
+ * /api/auth/my:
+ *   put:
+ *     summary: 회원 정보 수정
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - cookieAuth: []   # 세션 인증이 cookie 기반일 때
+ *     requestBody:
+ *       description: 수정할 회원 정보 (nick, phone, address 중 선택 가능)
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nick:
+ *                 type: string
+ *                 description: 닉네임
+ *               phone:
+ *                 type: string
+ *                 description: 전화번호
+ *               address:
+ *                 type: string
+ *                 description: 주소
+ *             example:
+ *               nick: "새닉네임"
+ *               phone: "010-1234-5678"
+ *               address: "서울시 강남구"
+ *     responses:
+ *       200:
+ *         description: 회원 정보 수정 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 회원 정보가 수정되었습니다.
+ *       400:
+ *         description: 수정할 정보가 없거나 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: 수정할 정보가 없습니다.
+ *       401:
+ *         description: 로그인이 필요한 경우
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: 로그인이 필요합니다.
+ *       500:
+ *         description: 서버 내부 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: 유저 정보를 불러오는 중 오류가 발생했습니다.
+ */
 router.put('/my', isLoggedIn, async (req, res, next) => {
    try {
       if (!req.isAuthenticated()) {
@@ -245,11 +328,20 @@ router.put('/my', isLoggedIn, async (req, res, next) => {
          })
       }
 
-      // 프론트에서 보낸 데이터
-      const { nick, phone, address } = req.body
+      const fieldsToUpdate = {}
+      const allowedFields = ['nick', 'phone', 'address']
 
-      // 로그인한 유저 정보 업데이트
-      const updatedUser = await User.update({ nick, phone, address }, { where: { id: req.user.id } })
+      allowedFields.forEach((field) => {
+         if (req.body[field] !== undefined && req.body[field] !== '') {
+            fieldsToUpdate[field] = req.body[field]
+         }
+      })
+
+      if (Object.keys(fieldsToUpdate).length === 0) {
+         return res.status(400).json({ success: false, message: '수정할 정보가 없습니다.' })
+      }
+
+      await User.update(fieldsToUpdate, { where: { id: req.user.id } })
 
       res.json({
          success: true,
