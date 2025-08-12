@@ -62,6 +62,7 @@ app.use(
       cookie: {
          httpOnly: true,
          secure: false,
+         sameSite: 'lax', // cross-site에서 쿠키 전송을 허용
       },
    })
 )
@@ -80,6 +81,9 @@ app.use('/keyword', keywordRouter)
 app.use('/matching', matchingRouter)
 app.use('/priceProposal', priceProposalRouter)
 app.use('/info', infoRouter)
+
+// 사용자 정보 수정
+app.use('/api/auth', authRouter)
 
 app.use((req, res, next) => {
    const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`)

@@ -144,6 +144,8 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
                name: user.name,
                nick: user.nick,
                access: user.access,
+               phone: user.phone,
+               address: user.address,
             },
          })
       })
@@ -217,6 +219,8 @@ router.get('/status', async (req, res, next) => {
                nick: req.user.nick,
                email: req.user.email,
                access: req.user.access,
+               phone: req.user.phone,
+               address: req.user.address,
             },
          })
       } else {
@@ -227,6 +231,33 @@ router.get('/status', async (req, res, next) => {
    } catch (error) {
       error.status = 500
       error.message = '로그인 상태확인 중 오류가 발생했습니다.'
+      next(error)
+   }
+})
+
+// 정보 수정
+router.put('/my', isLoggedIn, async (req, res, next) => {
+   try {
+      if (!req.isAuthenticated()) {
+         return res.status(401).json({
+            success: false,
+            message: '로그인이 필요합니다.',
+         })
+      }
+
+      // 프론트에서 보낸 데이터
+      const { nick, phone, address } = req.body
+
+      // 로그인한 유저 정보 업데이트
+      const updatedUser = await User.update({ nick, phone, address }, { where: { id: req.user.id } })
+
+      res.json({
+         success: true,
+         message: '회원 정보가 수정되었습니다.',
+      })
+   } catch (error) {
+      error.status = 500
+      error.message = '유저 정보를 불러오는 중 오류가 발생했습니다.'
       next(error)
    }
 })
