@@ -3,7 +3,62 @@ const { RentalOrder, RentalOrderItem, RentalItem, Rating } = require('../models'
 const { isLoggedIn } = require('./middlewares')
 const router = express.Router()
 
-// 주문 생성 (주문 + 주문상품 연결 테이블 같이 처리)
+/**
+ * @swagger
+ * /rental/orders:
+ *   post:
+ *     summary: 렌탈 주문 생성
+ *     description: 사용자가 렌탈 상품을 선택하여 주문을 생성합니다.
+ *     tags: [RentalOrders]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - items
+ *               - useStart
+ *               - useEnd
+ *             properties:
+ *               orderStatus:
+ *                 type: string
+ *                 description: 주문 상태
+ *                 example: pending
+ *               items:
+ *                 type: array
+ *                 description: 주문할 렌탈 상품 목록
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - rentalItemId
+ *                     - quantity
+ *                   properties:
+ *                     rentalItemId:
+ *                       type: integer
+ *                       example: 10
+ *                     quantity:
+ *                       type: integer
+ *                       example: 2
+ *               useStart:
+ *                 type: string
+ *                 format: date
+ *                 description: 대여 시작일
+ *                 example: 2025-08-15
+ *               useEnd:
+ *                 type: string
+ *                 format: date
+ *                 description: 대여 종료일
+ *                 example: 2025-08-20
+ *     responses:
+ *       201:
+ *         description: 주문 생성 성공
+ *       400:
+ *         description: 요청 데이터 오류
+ *       500:
+ *         description: 서버 오류
+ */
+
 router.post('/', isLoggedIn, async (req, res) => {
    try {
       const { orderStatus = 'pending', items, useStart, useEnd } = req.body
