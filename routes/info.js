@@ -5,7 +5,6 @@ const router = express.Router()
 
 router.get('/managerUser/:page', isLoggedIn, isManager, async (req, res, next) => {
    try {
-      // console.log(req.query.params)
       const page = parseInt(req.params.page, 10) || 1
       const limit = 10
       const offset = (page - 1) * limit
@@ -35,6 +34,31 @@ router.get('/managerUser/:page', isLoggedIn, isManager, async (req, res, next) =
    } catch (error) {
       error.status = 500
       error.message = `유저 정보를 불러오는 중 오류가 발생했습니다. ${error}`
+      next(error)
+   }
+})
+
+router.delete('/managerUserDelete/:id', isLoggedIn, isManager, async (req, res, next) => {
+   try {
+      const user = await User.findOne({
+         where: { id: req.params.id },
+      })
+
+      if (!user) {
+         const error = new Error('유저를 찾을 수 없습니다.')
+         error.status = 404
+         return next(error)
+      }
+
+      await user.destroy()
+
+      res.status(200).json({
+         success: true,
+         message: '사용자 한 명이 사라졌어요.',
+      })
+   } catch (error) {
+      error.status = 500
+      error.message = `계정 삭제 중 오류가 발생했습니다. ${error}`
       next(error)
    }
 })
