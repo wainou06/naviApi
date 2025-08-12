@@ -344,11 +344,17 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res) => {
 
       // 새로운 이미지가 있는 경우 추가
       if (req.files && req.files.length > 0) {
+         // 현재 남아있는 이미지 개수 확인
+         const existingImageCount = await Img.count({
+            where: { itemId: item.id },
+         })
+
          const imagePromises = req.files.map((file, index) => {
             return Img.create({
                originName: file.originalname,
                imgUrl: `/uploads/${file.filename}`,
-               field: 'N', // 새로 추가된 이미지는 대표이미지가 아님
+               //기존 이미지가 없고 첫 번째 새 이미지면 Y
+               field: existingImageCount === 0 && index === 0 ? 'Y' : 'N',
                itemId: item.id,
             })
          })
