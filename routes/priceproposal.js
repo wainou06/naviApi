@@ -3,7 +3,75 @@ const router = express.Router()
 const { PriceProposal, Item, User, sequelize } = require('../models')
 const { isLoggedIn } = require('./middlewares')
 
-// 가격 제안 생성
+/**
+ * @swagger
+ * /price-proposals:
+ *   post:
+ *     summary: 가격 제안 생성
+ *     description: 사용자가 특정 아이템에 대해 가격 제안을 등록합니다.
+ *     tags: [PriceProposals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - itemId
+ *               - proposedPrice
+ *             properties:
+ *               itemId:
+ *                 type: integer
+ *                 example: 123
+ *                 description: 제안할 아이템의 ID
+ *               proposedPrice:
+ *                 type: number
+ *                 example: 50000
+ *                 description: 제안하는 가격
+ *               message:
+ *                 type: string
+ *                 example: "조금 더 저렴하게 구매할 수 있을까요?"
+ *                 description: 추가 메시지 (선택 사항)
+ *     responses:
+ *       201:
+ *         description: 가격 제안 생성 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 itemId:
+ *                   type: integer
+ *                   example: 123
+ *                 userId:
+ *                   type: integer
+ *                   example: 42
+ *                 proposedPrice:
+ *                   type: number
+ *                   example: 50000
+ *                 message:
+ *                   type: string
+ *                   example: "조금 더 저렴하게 구매할 수 있을까요?"
+ *                 status:
+ *                   type: string
+ *                   example: pending
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2025-08-12T10:00:00Z
+ *       400:
+ *         description: 필수 필드 누락
+ *       404:
+ *         description: 아이템을 찾을 수 없음
+ *       500:
+ *         description: 서버 오류
+ */
+
 router.post('/', isLoggedIn, async (req, res) => {
    try {
       const { itemId, proposedPrice, message } = req.body
@@ -33,7 +101,38 @@ router.post('/', isLoggedIn, async (req, res) => {
    }
 })
 
-// 가격 제안 목록 조회 (특정 아이템에 대한)
+/**
+ * @swagger
+ * /price-proposals/{itemId}:
+ *   get:
+ *     summary: 특정 아이템 가격 제안 리스트 조회
+ *     description: 특정 아이템에 대해 사용자가 제안한 가격 리스트를 조회합니다.
+ *     tags: [PriceProposals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 조회할 아이템 ID
+ *         example: 123
+ *     responses:
+ *       200:
+ *         description: 가격 제안 리스트 조회 성공
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 서버 에러 발생
+ */
+
 router.get('/:itemId', isLoggedIn, async (req, res) => {
    try {
       const { itemId } = req.params
@@ -66,6 +165,47 @@ router.get('/:itemId', isLoggedIn, async (req, res) => {
       res.status(500).json({ error: '서버 에러 발생' })
    }
 })
+
+/**
+ * @swagger
+ * /price-proposals/{proposalId}/status:
+ *   patch:
+ *     summary: 가격 제안 상태 변경
+ *     description: 아이템 소유자가 특정 가격 제안의 상태를 변경합니다.
+ *     tags: [PriceProposals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: proposalId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 상태를 변경할 가격 제안 ID
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 description: 변경할 상태 (예: pending, accepted, rejected)
+ *                 example: accepted
+ *     responses:
+ *       200:
+ *         description: 상태 변경 성공
+ *       403:
+ *         description: 권한 없음
+ *       404:
+ *         description: 가격 제안 없음
+ *       500:
+ *         description: 서버 오류
+ */
 
 router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
    const { proposalId } = req.params
@@ -106,7 +246,6 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
             item: proposal.item.toJSON(), // item 전체를 넣음
          },
       })
-
    } catch (error) {
       await t.rollback()
       console.error(error)

@@ -11,7 +11,7 @@ const options = {
       },
       servers: [
          {
-            url: process.env.APP_API_URL, // 실제 서버 주소로 바꾸세요
+            url: process.env.APP_API_URL,
          },
       ],
    },
