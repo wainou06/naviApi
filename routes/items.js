@@ -33,7 +33,7 @@ const upload = multer({
 })
 
 // GET /items/list - 상품 목록 조회 (검색, 페이징 기능)
-router.get('/list', async (req, res) => {
+router.get('/list', async (req, res, next) => {
    try {
       const { page = 1, limit = 12, searchTerm = '', searchCategory = '', sellCategory = '' } = req.query
 
@@ -94,16 +94,12 @@ router.get('/list', async (req, res) => {
       })
    } catch (error) {
       console.error('상품 목록 조회 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '상품 목록을 불러오는데 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
 // GET /items/detail/:id - 상품 상세 조회
-router.get('/detail/:id', async (req, res) => {
+router.get('/detail/:id', async (req, res, next) => {
    try {
       const { id } = req.params
 
@@ -153,16 +149,12 @@ router.get('/detail/:id', async (req, res) => {
       })
    } catch (error) {
       console.error('상품 상세 조회 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '상품을 불러오는데 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
 // POST /items - 상품 등록
-router.post('/', isLoggedIn, upload.array('img', 5), async (req, res) => {
+router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
    try {
       const { name, price, stock, content, status, keywords } = req.body
 
@@ -272,20 +264,13 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res) => {
          data: createdItem,
       })
    } catch (error) {
-      console.error('POST /items error:', error)
-      console.error('Error name:', error.name)
-      console.error('Error message:', error.message)
-
-      res.status(500).json({
-         success: false,
-         message: '상품 등록에 실패했습니다.',
-         error: error.message || error,
-      })
+      console.error('상품 등록 오류:', error)
+      next(error)
    }
 })
 
 // PUT /items/edit/:id - 상품 수정
-router.put('/edit/:id', upload.array('img', 5), async (req, res) => {
+router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
    try {
       const { id } = req.params
       const { name, price, stock, content, status, keywords, deleteImages } = req.body
@@ -419,16 +404,12 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res) => {
       })
    } catch (error) {
       console.error('상품 수정 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '상품 수정에 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
 // DELETE /items/:id - 상품 삭제
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
    try {
       const { id } = req.params
 
@@ -459,11 +440,7 @@ router.delete('/:id', async (req, res) => {
       })
    } catch (error) {
       console.error('상품 삭제 오류:', error)
-      res.status(500).json({
-         success: false,
-         message: '상품 삭제에 실패했습니다.',
-         error: error.message,
-      })
+      next(error)
    }
 })
 
