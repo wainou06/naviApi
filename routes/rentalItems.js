@@ -476,13 +476,16 @@ router.get('/detail/:id', async (req, res, next) => {
             },
             {
                model: ItemKeyword,
+               required: false,
+               paranoid: false,
                include: [
                   {
                      model: Keyword,
+                     required: false,
+                     paranoid: false,
                      attributes: ['id', 'name'],
                   },
                ],
-               attributes: [],
             },
          ],
       })
