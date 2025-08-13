@@ -45,6 +45,100 @@ const upload = multer({
    },
 })
 
+/**
+ * @swagger
+ * /rental:
+ *   post:
+ *     summary: 렌탈 상품 등록
+ *     description: 새로운 렌탈 상품을 등록합니다. 이미지와 키워드를 함께 등록할 수 있습니다.
+ *     tags: [RentalItems]
+ *     consumes:
+ *       - multipart/form-data
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rentalItemNm
+ *               - oneDayPrice
+ *               - quantity
+ *             properties:
+ *               rentalItemNm:
+ *                 type: string
+ *                 description: 렌탈 상품명
+ *                 example: "캠핑 텐트"
+ *               oneDayPrice:
+ *                 type: number
+ *                 description: 일일 렌탈 가격
+ *                 example: 30000
+ *               quantity:
+ *                 type: integer
+ *                 description: 재고 수량
+ *                 example: 5
+ *               rentalDetail:
+ *                 type: string
+ *                 description: 렌탈 상품 상세 설명
+ *                 example: "4인용 캠핑 텐트입니다."
+ *               rentalStatus:
+ *                 type: string
+ *                 enum: [Y, N]
+ *                 description: 렌탈 상태
+ *                 example: "Y"
+ *               keywords:
+ *                 type: string
+ *                 description: 쉼표로 구분된 키워드
+ *                 example: "캠핑, 텐트, 아웃도어"
+ *               img:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: 상품 이미지 파일들
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       201:
+ *         description: 렌탈 상품 등록 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         rentalItem:
+ *                           $ref: '#/components/schemas/RentalItem'
+ *                         images:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/RentalImg'
+ *       400:
+ *         description: 필수 항목 누락
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "상품명, 일일 렌탈가격, 재고는 필수 입력 항목입니다."
+ *       401:
+ *         description: 인증되지 않은 사용자
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // 렌탈상품 등록 /rental/create
 router.post('/', isLoggedIn, upload.array('img'), async (req, res, next) => {
    try {
@@ -116,7 +210,75 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /rental/list:
+ *   get:
+ *     summary: 렌탈 상품 목록 조회
+ *     description: 페이징, 검색, 필터링이 가능한 렌탈 상품 목록을 조회합니다.
+ *     tags: [RentalItems]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 페이지 번호 (기본값 1)
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: 페이지당 상품 수 (기본값 5)
+ *         example: 5
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: 상품명 또는 상세설명에서 검색할 키워드
+ *         example: "텐트"
+ *       - in: query
+ *         name: searchCategory
+ *         schema:
+ *           type: string
+ *           enum: [rentalItemNm, rentalDetail]
+ *         description: 검색 카테고리
+ *         example: "rentalItemNm"
+ *       - in: query
+ *         name: rentalStatus
+ *         schema:
+ *           type: string
+ *           enum: [Y, N]
+ *         description: 렌탈 상태 필터
+ *         example: "Y"
+ *     responses:
+ *       200:
+ *         description: 렌탈 상품 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         rentalItems:
+ *                           type: array
+ *                           items:
+ *                             $ref: '#/components/schemas/RentalItem'
+ *                         pagination:
+ *                           $ref: '#/components/schemas/Pagination'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // GET /rental/list - 상품 목록 조회
 router.get('/list', async (req, res, next) => {
    try {
@@ -185,7 +347,48 @@ router.get('/list', async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /rental/{id}:
+ *   delete:
+ *     summary: 렌탈 상품 삭제
+ *     description: 특정 렌탈 상품을 삭제합니다. 관련된 이미지와 키워드도 함께 삭제됩니다.
+ *     tags: [RentalItems]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 삭제할 렌탈 상품 ID
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: 렌탈 상품 삭제 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: true
+ *               message: "렌탈상품이 성공적으로 삭제되었습니다."
+ *       404:
+ *         description: 렌탈 상품을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "렌탈상품을 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // DELETE 렌탈상품 삭제 /rental/:id
 router.delete('/:id', async (req, res, next) => {
    try {
@@ -214,7 +417,50 @@ router.delete('/:id', async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /rental/detail/{id}:
+ *   get:
+ *     summary: 렌탈 상품 상세 조회
+ *     description: 특정 렌탈 상품의 상세 정보를 조회합니다.
+ *     tags: [RentalItems]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 렌탈 상품 ID
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: 렌탈 상품 상세 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/RentalItem'
+ *       404:
+ *         description: 해당 렌탈 상품을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "해당 렌탈상품을 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // 특정 렌탈상품 불러오기 /rental/detail/:id
 router.get('/detail/:id', async (req, res, next) => {
    try {
@@ -258,7 +504,93 @@ router.get('/detail/:id', async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /rental/edit/{id}:
+ *   put:
+ *     summary: 렌탈 상품 수정
+ *     description: 기존 렌탈 상품의 정보를 수정합니다. 이미지 추가/삭제와 키워드 변경이 가능합니다.
+ *     tags: [RentalItems]
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 수정할 렌탈 상품 ID
+ *         example: 1
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rentalItemNm:
+ *                 type: string
+ *                 description: 렌탈 상품명
+ *                 example: "수정된 캠핑 텐트"
+ *               oneDayPrice:
+ *                 type: number
+ *                 description: 일일 렌탈 가격
+ *                 example: 35000
+ *               quantity:
+ *                 type: integer
+ *                 description: 재고 수량
+ *                 example: 3
+ *               rentalDetail:
+ *                 type: string
+ *                 description: 렌탈 상품 상세 설명
+ *                 example: "수정된 4인용 캠핑 텐트입니다."
+ *               rentalStatus:
+ *                 type: string
+ *                 enum: [Y, N]
+ *                 description: 렌탈 상태
+ *                 example: "Y"
+ *               keywords:
+ *                 type: string
+ *                 description: 쉼표로 구분된 키워드
+ *                 example: "캠핑, 텐트, 아웃도어, 수정됨"
+ *               deleteImages:
+ *                 type: string
+ *                 description: 삭제할 이미지 ID 배열 (JSON 형식)
+ *                 example: "[1, 2]"
+ *               img:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: 새로 추가할 이미지 파일들
+ *     responses:
+ *       200:
+ *         description: 렌탈 상품 수정 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/RentalItem'
+ *       404:
+ *         description: 해당 렌탈 상품을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "해당 렌탈상품을 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // 렌탈 상품 수정 /rental/edit/:id
 router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
    try {
@@ -293,12 +625,10 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
       await rentalItem.update(updateData)
       console.log('기본 정보 업데이트 완료')
 
-      // 삭제할 이미지가 있을 경우 처리 (안전하게)
+      // 삭제할 이미지가 있을 경우
       if (deleteImages) {
          try {
             let imageIdsToDelete = []
-
-            // deleteImages가 문자열인 경우 JSON.parse, 배열인 경우 그대로 사용
             if (typeof deleteImages === 'string') {
                imageIdsToDelete = JSON.parse(deleteImages)
             } else if (Array.isArray(deleteImages)) {
@@ -325,7 +655,7 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
                   }
                })
 
-               // 데이터베이스에서 이미지 레코드 삭제
+               // 데이터베이스에서 이미지 삭제
                await RentalImg.destroy({
                   where: {
                      id: { [Op.in]: imageIdsToDelete },
@@ -335,7 +665,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
             }
          } catch (imageDeleteError) {
             console.error('이미지 삭제 중 오류:', imageDeleteError)
-            // 이미지 삭제 실패해도 계속 진행
          }
       }
 
@@ -382,7 +711,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
             }
          } catch (keywordError) {
             console.error('키워드 업데이트 중 오류:', keywordError)
-            // 키워드 업데이트 실패해도 계속 진행
          }
       }
 
