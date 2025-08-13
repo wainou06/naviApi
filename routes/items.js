@@ -32,10 +32,85 @@ const upload = multer({
    },
 })
 
+/**
+ * @swagger
+ * tags:
+ *   name: Items
+ */
+
+/**
+ * @swagger
+ * /items/list:
+ *   get:
+ *     summary: 상품 목록 조회
+ *     description: 페이징, 검색, 필터링이 가능한 상품 목록을 조회합니다.
+ *     tags: [Items]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 현재 페이지 (기본 1)
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: 페이지당 상품 수 (기본 10)
+ *         example: 10
+ *       - in: query
+ *         name: searchTerm
+ *         schema:
+ *           type: string
+ *         description: 상품명 검색 키워드
+ *         example: "노트북"
+ *       - in: query
+ *         name: searchCategory
+ *         schema:
+ *           type: string
+ *         description: 검색 카테고리 (현재 사용되지 않음)
+ *         example: "itemNm"
+ *       - in: query
+ *         name: sellCategory
+ *         schema:
+ *           type: string
+ *           enum: [SELL, SOLD_OUT, RESERVATION]
+ *         description: 판매 상태 필터
+ *         example: "SELL"
+ *     responses:
+ *       200:
+ *         description: 상품 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Item'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // GET /items/list - 상품 목록 조회 (검색, 페이징 기능)
 router.get('/list', async (req, res, next) => {
    try {
-      const { page = 1, limit = 12, searchTerm = '', searchCategory = '', sellCategory = '' } = req.query
+      const { page = 1, limit = 10, searchTerm = '', searchCategory = '', sellCategory = '' } = req.query
 
       const offset = (page - 1) * limit
 
@@ -97,7 +172,51 @@ router.get('/list', async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /items/detail/{id}:
+ *   get:
+ *     summary: 상품 상세 조회
+ *     description: 특정 상품의 상세 정보를 조회합니다. 이미지, 키워드, 주문 정보가 포함됩니다.
+ *     tags: [Items]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 상품 ID
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: 상품 상세 정보 반환
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Item'
+ *       404:
+ *         description: 상품을 찾을 수 없습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "상품을 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // GET /items/detail/:id - 상품 상세 조회
 router.get('/detail/:id', async (req, res, next) => {
    try {
@@ -152,7 +271,102 @@ router.get('/detail/:id', async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /items:
+ *   post:
+ *     summary: 상품 등록
+ *     description: 새로운 상품을 등록합니다. 이미지와 키워드를 함께 등록할 수 있습니다.
+ *     tags: [Items]
+ *     consumes:
+ *       - multipart/form-data
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - price
+ *               - content
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 상품명
+ *                 example: "맥북 프로 14인치"
+ *               price:
+ *                 type: integer
+ *                 description: 상품 가격
+ *                 minimum: 0
+ *                 example: 1500000
+ *               stock:
+ *                 type: integer
+ *                 description: 재고 수량 (현재 사용되지 않음)
+ *                 example: 10
+ *               content:
+ *                 type: string
+ *                 description: 상품 상세 설명
+ *                 example: "2023년형 맥북 프로 14인치, M2 Pro 칩셋"
+ *               status:
+ *                 type: string
+ *                 enum: [sell, sold_out, reservation, SELL, SOLD_OUT, RESERVATION]
+ *                 description: 판매 상태
+ *                 example: "sell"
+ *               keywords:
+ *                 type: string
+ *                 description: 쉼표로 구분된 키워드
+ *                 example: "맥북, 노트북, 애플"
+ *               img:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: 상품 이미지 파일들 (최대 5개)
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       201:
+ *         description: 상품 등록 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Item'
+ *             example:
+ *               success: true
+ *               message: "상품이 성공적으로 등록되었습니다."
+ *               data:
+ *                 id: 1
+ *                 itemNm: "맥북 프로 14인치"
+ *                 price: 1500000
+ *                 itemSellStatus: "SELL"
+ *       400:
+ *         description: 필수 항목 누락
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "상품명, 가격, 상품내용은 필수 항목입니다."
+ *       401:
+ *         description: 인증되지 않은 사용자
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // POST /items - 상품 등록
 router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
    try {
@@ -268,7 +482,97 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /items/edit/{id}:
+ *   put:
+ *     summary: 상품 수정
+ *     description: 기존 상품의 정보를 수정합니다. 이미지 추가/삭제와 키워드 변경이 가능합니다.
+ *     tags: [Items]
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 수정할 상품 ID
+ *         example: 1
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 상품명
+ *                 example: "수정된 맥북 프로 14인치"
+ *               price:
+ *                 type: integer
+ *                 description: 상품 가격
+ *                 minimum: 0
+ *                 example: 1400000
+ *               stock:
+ *                 type: integer
+ *                 description: 재고 수량 (현재 사용되지 않음)
+ *                 example: 8
+ *               content:
+ *                 type: string
+ *                 description: 상품 상세 설명
+ *                 example: "수정된 2023년형 맥북 프로 14인치"
+ *               status:
+ *                 type: string
+ *                 enum: [sell, sold_out, reservation, SELL, SOLD_OUT, RESERVATION]
+ *                 description: 판매 상태
+ *                 example: "sell"
+ *               keywords:
+ *                 type: string
+ *                 description: 쉼표로 구분된 키워드
+ *                 example: "맥북, 노트북, 애플, 수정됨"
+ *               deleteImages:
+ *                 type: string
+ *                 description: 삭제할 이미지 ID 배열 (JSON 문자열)
+ *                 example: "[1, 2]"
+ *               img:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: 새로 추가할 이미지 파일들 (최대 5개)
+ *     responses:
+ *       200:
+ *         description: 상품 수정 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/Item'
+ *             example:
+ *               success: true
+ *               message: "상품이 성공적으로 수정되었습니다."
+ *       404:
+ *         description: 상품을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "상품을 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // PUT /items/edit/:id - 상품 수정
 router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
    try {
@@ -407,7 +711,48 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
       next(error)
    }
 })
-
+/**
+ * @swagger
+ * /items/{id}:
+ *   delete:
+ *     summary: 상품 삭제
+ *     description: 특정 상품을 삭제합니다. 관련된 이미지와 키워드도 함께 삭제됩니다.
+ *     tags: [Items]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: 삭제할 상품 ID
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: 상품 삭제 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *             example:
+ *               success: true
+ *               message: "상품이 성공적으로 삭제되었습니다."
+ *       404:
+ *         description: 상품을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "상품을 찾을 수 없습니다."
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 // DELETE /items/:id - 상품 삭제
 router.delete('/:id', async (req, res, next) => {
    try {
