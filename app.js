@@ -21,6 +21,7 @@ const keywordRouter = require('./routes/keyword')
 const matchingRouter = require('./routes/matching')
 const priceProposalRouter = require('./routes/priceproposal')
 const infoRouter = require('./routes/info')
+const chatRouter = require('./routes/chat')
 
 // 구글 연동을 위한 passport 연결
 require('./server/passport')
@@ -28,6 +29,7 @@ require('./passport')
 
 // 시퀄라이즈를 사용한 DB연결
 sequelize
+   // DB업데이트시 요거 true로 바꿨다가 false로 다시
    .sync({ force: false })
    .then(() => {
       console.log('데이터베이스 연결 성공')
@@ -75,12 +77,13 @@ app.use('/', indexRouter)
 app.use('/items', itemsRouter)
 app.use('/order', orderRouter)
 app.use('/rental', rentalItemsRouter)
-app.use('/rentalOrder', rentalOrderRouter)
+app.use('/rental/orders', rentalOrderRouter)
 app.use('/auth', authRouter)
 app.use('/keyword', keywordRouter)
 app.use('/matching', matchingRouter)
 app.use('/priceProposal', priceProposalRouter)
 app.use('/info', infoRouter)
+app.use('/chats', chatRouter)
 
 // 사용자 정보 수정
 app.use('/api/auth', authRouter)
@@ -104,6 +107,4 @@ app.use((err, req, res, next) => {
    })
 })
 
-app.listen(app.get('port'), () => {
-   console.log(`서버가 작동 중 입니다. http://localhost:${app.get('port')}`)
-})
+module.exports = app

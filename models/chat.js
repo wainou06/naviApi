@@ -43,29 +43,9 @@ module.exports = class Chat extends Sequelize.Model {
    }
 
    static associate(db) {
-      // Chat ↔ User (Buyer)
-      db.Chat.belongsTo(db.User, {
-         foreignKey: 'buyerId',
-         as: 'buyer',
-      })
-
-      // Chat ↔ User (Seller)
-      db.Chat.belongsTo(db.User, {
-         foreignKey: 'sellerId',
-         as: 'seller',
-      })
-
-      // Chat ↔ Item
-      db.Chat.belongsTo(db.Item, {
-         foreignKey: 'itemId',
-         as: 'item',
-      })
-
-      // Chat ↔ Message (1:N)
-      db.Chat.hasMany(db.Message, {
-         foreignKey: 'chatId',
-         sourceKey: 'id',
-         as: 'messages',
-      })
+      db.Chat.belongsTo(db.User, { foreignKey: 'buyerId', as: 'buyer' })
+      db.Chat.belongsTo(db.User, { foreignKey: 'sellerId', as: 'seller' })
+      db.Chat.belongsTo(db.Item, { foreignKey: 'itemId', as: 'item' })
+      db.Chat.hasMany(db.Message, { foreignKey: 'chatId', sourceKey: 'id', as: 'messages' })
    }
 }
