@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Keyword = require('../models/keyword')
-const { isLoggedIn, isManager } = require('./middlewares')
+const { isLoggedIn, isManager, isSuspended } = require('./middlewares')
 // keyworad swagger는 따로 폴더가 존재합니다
 
 router.post('/', isLoggedIn, isManager, async (req, res, next) => {

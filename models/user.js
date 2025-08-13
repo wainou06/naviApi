@@ -39,6 +39,10 @@ module.exports = class User extends Sequelize.Model {
                allowNull: true,
                unique: true,
             },
+            suspend: {
+               type: Sequelize.DATE,
+               allowNull: true,
+            },
          },
          {
             sequelize,

@@ -15,7 +15,7 @@ router.get('/managerUser/:page', isLoggedIn, isManager, async (req, res, next) =
          limit,
          offset,
          order: [['createdAt', 'DESC']],
-         attributes: ['id', 'name', 'nick', 'email', 'address', 'phone'],
+         attributes: ['id', 'name', 'nick', 'email', 'address', 'phone', 'suspend'],
       })
 
       const pageCount = Math.ceil(count / limit)
@@ -59,6 +59,34 @@ router.delete('/managerUserDelete/:id', isLoggedIn, isManager, async (req, res, 
    } catch (error) {
       error.status = 500
       error.message = `계정 삭제 중 오류가 발생했습니다. ${error}`
+      next(error)
+   }
+})
+
+router.put('/managerUserSuspend/:id', isLoggedIn, isManager, async (req, res, next) => {
+   try {
+      const user = await User.findOne({
+         where: { id: req.params.id },
+      })
+
+      if (!user) {
+         const error = new Error('유저를 찾을 수 없습니다.')
+         error.status = 404
+         return next(error)
+      }
+
+      await user.update({
+         suspend: req.body.date,
+      })
+
+      res.status(200).json({
+         success: true,
+         user: user,
+         message: '계정이 수정되었습니다.',
+      })
+   } catch (error) {
+      error.status = 500
+      error.message = '계정 정지 중 오류가 발생했습니다.'
       next(error)
    }
 })
