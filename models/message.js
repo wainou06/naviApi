@@ -39,16 +39,7 @@ module.exports = class Message extends Sequelize.Model {
    }
 
    static associate(db) {
-      // Message → Chat
-      db.Message.belongsTo(db.Chat, {
-         foreignKey: 'chatId',
-         as: 'chat',
-      })
-
-      // Message → User (Sender)
-      db.Message.belongsTo(db.User, {
-         foreignKey: 'senderId',
-         as: 'sender',
-      })
+      db.Message.belongsTo(db.Chat, { foreignKey: 'chatId', as: 'chat' })
+      db.Message.belongsTo(db.User, { foreignKey: 'senderId', as: 'sender' })
    }
 }

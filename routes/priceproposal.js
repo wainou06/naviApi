@@ -214,7 +214,10 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
    const t = await sequelize.transaction()
    try {
       const proposal = await PriceProposal.findByPk(proposalId, {
-         include: [{ model: Item, as: 'item' }],
+         include: [
+            { model: Item, as: 'item', include: [{ model: User, as: 'user', attributes: ['id', 'nick'] }] }, // 판매자 정보
+            { model: User, as: 'user', attributes: ['id', 'nick'] }, // 제안자 정보
+         ],
          transaction: t,
          lock: t.LOCK.UPDATE,
       })
@@ -233,7 +236,7 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
       await proposal.save({ transaction: t })
 
       if (status === 'accepted') {
-         proposal.item.itemSellStatus = 'SOLD_OUT' // 필드명 맞게 변경
+         proposal.item.itemSellStatus = 'SOLD_OUT'
          await proposal.item.save({ transaction: t })
       }
 
@@ -243,7 +246,9 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
          message: '상태가 변경되었습니다.',
          updatedProposal: {
             ...proposal.toJSON(),
-            item: proposal.item.toJSON(), // item 전체를 넣음
+            buyer: proposal.user.toJSON(), // 구매자(제안자)
+            seller: proposal.item.user.toJSON(), // 판매자
+            item: proposal.item.toJSON(),
          },
       })
    } catch (error) {
@@ -252,5 +257,7 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
       res.status(500).json({ message: '서버 오류 발생' })
    }
 })
+
+
 
 module.exports = router
