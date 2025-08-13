@@ -211,17 +211,18 @@ router.get('/logout', isLoggedIn, async (req, res, next) => {
 router.get('/status', async (req, res, next) => {
    try {
       if (req.isAuthenticated()) {
+         const userFromDB = await User.findOne({
+            where: { id: req.user.id },
+            attributes: ['id', 'name', 'nick', 'email', 'access', 'phone', 'address'],
+         })
+
+         if (!userFromDB) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' })
+         }
+
          res.status(200).json({
             isAuthenticated: true,
-            user: {
-               id: req.user.id,
-               name: req.user.name,
-               nick: req.user.nick,
-               email: req.user.email,
-               access: req.user.access,
-               phone: req.user.phone,
-               address: req.user.address,
-            },
+            user: userFromDB,
          })
       } else {
          res.status(200).json({
