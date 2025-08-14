@@ -453,7 +453,7 @@ router.post('/forgot-password-email', async (req, res) => {
    const { email } = req.body
    try {
       const user = await User.findOne({ where: { email } })
-      if (!user) return res.status(400).json({ message: '이메일이 없습니다' })
+      if (!user) return res.status(400).json({ message: '해당 이메일의 사용자가 없습니다.' })
 
       const tempPassword = Math.random().toString(36).slice(-8)
 
@@ -533,7 +533,7 @@ router.post('/forgot-password-phone', async (req, res) => {
    try {
       const user = await User.findOne({ where: { phone } })
       if (!user) {
-         return res.status(400).json({ message: '해당 전화번호의 유저가 없습니다.' })
+         return res.status(400).json({ message: '해당 전화번호의 사용자가 없습니다.' })
       }
 
       const tempPassword = Math.random().toString(36).slice(2, 10)
