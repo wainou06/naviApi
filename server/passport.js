@@ -5,17 +5,12 @@ const { User } = require('../models')
 passport.use(
    new GoogleStrategy(
       {
-         clientID: '156386536274-078nmjqmacjhku72ukrigkn8rf2le50v.apps.googleusercontent.com',
-         clientSecret: process.env.YOUR_GOOGLE_CLIENT_SECRET,
+         clientID: process.env.GOOGLE_CLIENT_ID,
+         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
          callbackURL: 'http://localhost:8000/auth/google/callback',
       },
       async (accessToken, refreshToken, profile, done) => {
-         // console.log('Google profile:', profile)
-         // console.log('Access Token:', accessToken)
          try {
-            // console.log('Google profile:', profile)
-            // console.log('Access Token:', accessToken)
-            // console.log(profile)
             let user = await User.findOne({ where: { googleId: profile.id } })
             if (!user) {
                user = await User.create({
