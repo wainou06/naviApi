@@ -34,7 +34,3 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser((user, done) => {
    done(null, user)
 })
-// passport.authenticate('google', {
-//    failureRedirect: '/login',
-//    session: false,
-// })
