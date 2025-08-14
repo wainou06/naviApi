@@ -1,7 +1,10 @@
 const express = require('express')
 const User = require('../models/user')
 const { isLoggedIn, isManager } = require('./middlewares')
+const bcrypt = require('bcrypt')
 const router = express.Router()
+
+//유저 조회
 
 router.get('/managerUser/:page', isLoggedIn, isManager, async (req, res, next) => {
    try {
@@ -38,6 +41,8 @@ router.get('/managerUser/:page', isLoggedIn, isManager, async (req, res, next) =
    }
 })
 
+//계정 삭제
+
 router.delete('/managerUserDelete/:id', isLoggedIn, isManager, async (req, res, next) => {
    try {
       const user = await User.findOne({
@@ -63,6 +68,8 @@ router.delete('/managerUserDelete/:id', isLoggedIn, isManager, async (req, res, 
    }
 })
 
+//계정 정지
+
 router.put('/managerUserSuspend/:id', isLoggedIn, isManager, async (req, res, next) => {
    try {
       const user = await User.findOne({
@@ -87,6 +94,45 @@ router.put('/managerUserSuspend/:id', isLoggedIn, isManager, async (req, res, ne
    } catch (error) {
       error.status = 500
       error.message = '계정 정지 중 오류가 발생했습니다.'
+      next(error)
+   }
+})
+
+router.put('/userPasswordEdit', isLoggedIn, async (req, res, next) => {
+   try {
+      const { id, currentPassword, newPassword } = req.body
+      const user = await User.findOne({
+         where: { id: id },
+      })
+
+      if (!user) {
+         const error = new Error('유저를 찾을 수 없습니다.')
+         error.status = 404
+         return next(error)
+      }
+
+      const result = await bcrypt.compare(currentPassword, user.password)
+
+      if (!result) {
+         const error = new Error('비밀번호가 일치하지 않습니다.')
+         error.status = 404
+         return next(error)
+      }
+
+      const hash = await bcrypt.hash(newPassword, 12)
+
+      await user.update({
+         password: hash,
+      })
+
+      res.status(200).json({
+         success: true,
+         user,
+         message: '비밀번호가 수정되었습니다.',
+      })
+   } catch (error) {
+      error.status = 500
+      error.message = '비밀번호 수정 중 오류가 발생했습니다.'
       next(error)
    }
 })
