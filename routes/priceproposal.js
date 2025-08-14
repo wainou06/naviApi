@@ -1,7 +1,8 @@
 const express = require('express')
 const router = express.Router()
-const { PriceProposal, Item, User, sequelize } = require('../models')
+const { PriceProposal, Item, User, sequelize, Img } = require('../models')
 const { isLoggedIn } = require('./middlewares')
+const { Op } = require('sequelize')
 
 /**
  * @swagger
@@ -95,6 +96,297 @@ router.post('/', isLoggedIn, async (req, res) => {
       })
 
       res.status(201).json(newProposal)
+   } catch (error) {
+      console.error(error)
+      res.status(500).json({ error: '서버 에러 발생' })
+   }
+})
+/**
+ * @swagger
+ * /price-proposals/user/sent:
+ *   get:
+ *     summary: 내가 보낸 가격 제안들 조회
+ *     description: 현재 로그인된 사용자가 보낸 모든 가격 제안을 조회합니다.
+ *     tags: [PriceProposals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 보낸 가격 제안 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   itemId:
+ *                     type: integer
+ *                     example: 123
+ *                   userId:
+ *                     type: integer
+ *                     example: 42
+ *                   proposedPrice:
+ *                     type: number
+ *                     example: 50000
+ *                   message:
+ *                     type: string
+ *                     example: "조금 더 저렴하게 구매할 수 있을까요?"
+ *                   status:
+ *                     type: string
+ *                     example: pending
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   item:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       title:
+ *                         type: string
+ *                       price:
+ *                         type: number
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           nick:
+ *                             type: string
+ *                       imgs:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *       500:
+ *         description: 서버 오류
+ */
+//내가 보낸 가격 제안들 조회
+router.get('/user/sent', isLoggedIn, async (req, res) => {
+   try {
+      const userId = req.user.id
+
+      const proposals = await PriceProposal.findAll({
+         where: { userId },
+         include: [
+            {
+               model: Item,
+               as: 'item',
+               include: [
+                  { model: User, as: 'user', attributes: ['id', 'nick'] },
+                  { model: Img, as: 'imgs' }, // 이미지 관계 추가
+               ],
+            },
+         ],
+         order: [['createdAt', 'DESC']],
+      })
+
+      res.json(proposals)
+   } catch (error) {
+      console.error(error)
+      res.status(500).json({ error: '서버 에러 발생' })
+   }
+})
+/**
+ * @swagger
+ * /price-proposals/user/received:
+ *   get:
+ *     summary: 내가 받은 가격 제안들 조회
+ *     description: 현재 로그인된 사용자의 상품들에 대해 받은 모든 가격 제안을 조회합니다.
+ *     tags: [PriceProposals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 받은 가격 제안 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   itemId:
+ *                     type: integer
+ *                     example: 123
+ *                   userId:
+ *                     type: integer
+ *                     example: 42
+ *                   proposedPrice:
+ *                     type: number
+ *                     example: 50000
+ *                   status:
+ *                     type: string
+ *                     example: pending
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   item:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       title:
+ *                         type: string
+ *                       price:
+ *                         type: number
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           nick:
+ *                             type: string
+ *                       imgs:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                   user:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nick:
+ *                         type: string
+ *       500:
+ *         description: 서버 오류
+ */
+// 내가 받은 가격 제안들 조회 (내 상품)
+router.get('/user/received', isLoggedIn, async (req, res) => {
+   try {
+      const userId = req.user.id
+
+      const proposals = await PriceProposal.findAll({
+         include: [
+            {
+               model: Item,
+               as: 'item',
+               where: { userId },
+               include: [
+                  { model: User, as: 'user', attributes: ['id', 'nick'] },
+                  { model: Img, as: 'imgs' }, // 이미지 관계 추가
+               ],
+            },
+            {
+               model: User,
+               as: 'user',
+               attributes: ['id', 'nick'],
+            },
+         ],
+         order: [['createdAt', 'DESC']],
+      })
+
+      res.json(proposals)
+   } catch (error) {
+      console.error(error)
+      res.status(500).json({ error: '서버 에러 발생' })
+   }
+})
+/**
+ * @swagger
+ * /price-proposals/user/completed:
+ *   get:
+ *     summary: 거래 완료된 내역 조회
+ *     description: 현재 로그인된 사용자와 관련된 모든 거래 완료 내역을 조회합니다.
+ *     tags: [PriceProposals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 거래 완료 내역 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   itemId:
+ *                     type: integer
+ *                     example: 123
+ *                   userId:
+ *                     type: integer
+ *                     example: 42
+ *                   proposedPrice:
+ *                     type: number
+ *                     example: 50000
+ *                   status:
+ *                     type: string
+ *                     example: accepted
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   updatedAt:
+ *                     type: string
+ *                     format: date-time
+ *                   item:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       title:
+ *                         type: string
+ *                       price:
+ *                         type: number
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           nick:
+ *                             type: string
+ *                       imgs:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                   user:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       nick:
+ *                         type: string
+ *       500:
+ *         description: 서버 오류
+ */
+//내 거래 완료된 내역 조회
+router.get('/user/completed', isLoggedIn, async (req, res) => {
+   try {
+      const userId = req.user.id
+
+      const completedDeals = await PriceProposal.findAll({
+         where: {
+            status: 'accepted',
+            [Op.or]: [{ userId }, { '$item.userId$': userId }],
+         },
+         include: [
+            {
+               model: Item,
+               as: 'item',
+               include: [
+                  { model: User, as: 'user', attributes: ['id', 'nick'] },
+                  { model: Img, as: 'imgs' }, // 이미지 관계 추가
+               ],
+            },
+            {
+               model: User,
+               as: 'user',
+               attributes: ['id', 'nick'],
+            },
+         ],
+         order: [['updatedAt', 'DESC']],
+      })
+
+      res.json(completedDeals)
    } catch (error) {
       console.error(error)
       res.status(500).json({ error: '서버 에러 발생' })
@@ -257,7 +549,5 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
       res.status(500).json({ message: '서버 오류 발생' })
    }
 })
-
-
 
 module.exports = router
