@@ -394,4 +394,164 @@ router.get(
    }
 )
 
+/**
+ * @swagger
+ * /auth/forgot-password-email:
+ *   post:
+ *     summary: 이메일로 임시 비밀번호 발급
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: 사용자 이메일
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: 임시 비밀번호 발급 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 임시 비밀번호가 발급되었습니다.
+ *                 tempPassword:
+ *                   type: string
+ *                   example: ab12cd34
+ *       400:
+ *         description: 이메일이 존재하지 않음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 이메일이 없습니다
+ *       500:
+ *         description: 서버 에러
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 임시 비밀번호를 발급하는 중 오류가 발생했습니다.
+ */
+router.post('/forgot-password-email', async (req, res) => {
+   const { email } = req.body
+   try {
+      const user = await User.findOne({ where: { email } })
+      if (!user) return res.status(400).json({ message: '이메일이 없습니다' })
+
+      const tempPassword = Math.random().toString(36).slice(-8)
+
+      const hashedPassword = await bcrypt.hash(tempPassword, 10)
+      user.password = hashedPassword
+      await user.save()
+
+      res.json({
+         message: '임시 비밀번호가 발급되었습니다.',
+         tempPassword: tempPassword,
+      })
+   } catch (error) {
+      error.status = 500
+      error.message = '임시 비밀번호를 발급하는 중 오류가 발생했습니다.'
+      next(error)
+   }
+})
+
+/**
+ * @swagger
+ * /auth/forgot-password-phone:
+ *   post:
+ *     summary: 전화번호로 임시 비밀번호 발급
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 description: 사용자 전화번호
+ *                 example: 010-1234-5678
+ *     responses:
+ *       200:
+ *         description: 임시 비밀번호 발급 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 임시 비밀번호가 발급되었습니다.
+ *                 tempPassword:
+ *                   type: string
+ *                   example: ab12cd34
+ *       400:
+ *         description: 해당 전화번호의 유저가 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 해당 전화번호의 유저가 없습니다.
+ *       500:
+ *         description: 서버 에러
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 임시 비밀번호를 발급하는 중 오류가 발생했습니다.
+ */
+router.post('/forgot-password-phone', async (req, res) => {
+   const { phone } = req.body
+
+   try {
+      const user = await User.findOne({ where: { phone } })
+      if (!user) {
+         return res.status(400).json({ message: '해당 전화번호의 유저가 없습니다.' })
+      }
+
+      const tempPassword = Math.random().toString(36).slice(2, 10)
+
+      const bcrypt = require('bcrypt')
+      const hashedPassword = await bcrypt.hash(tempPassword, 10)
+      user.password = hashedPassword
+      await user.save()
+
+      res.json({
+         message: '임시 비밀번호가 발급되었습니다.',
+         tempPassword,
+      })
+   } catch (error) {
+      error.status = 500
+      error.message = '임시 비밀번호를 발급하는 중 오류가 발생했습니다.'
+      next(error)
+   }
+})
+
 module.exports = router
