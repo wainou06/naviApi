@@ -7,8 +7,10 @@ const session = require('express-session')
 const passport = require('passport')
 const path = require('path')
 require('dotenv').config()
+
 const { swaggerUi, swaggerSpec } = require('./swagger')
-const passportConfig = require('./passport')
+const passportConfig = require('./passport') // 일반 Passport 설정
+const googlePassport = require('./server') // Google 전략
 const { sequelize } = require('./models')
 
 // 라우터 불러오기
@@ -31,7 +33,10 @@ sequelize
    .catch((err) => console.log('데이터베이스 연결 실패:', err))
 
 const app = express()
+
+// Passport 설정
 passportConfig()
+googlePassport()
 
 app.set('port', process.env.PORT || 8002)
 
@@ -65,7 +70,7 @@ const sessionMiddleware = session({
 app.use(sessionMiddleware)
 app.set('sessionMiddleware', sessionMiddleware) // Socket.io용
 
-// Passport
+// Passport 초기화
 app.use(passport.initialize())
 app.use(passport.session())
 
