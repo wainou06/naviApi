@@ -149,7 +149,7 @@ router.post('/create', isLoggedIn, async (req, res, next) => {
    try {
       const { itemId, buyerId, sellerId } = req.body
 
-      if (!itemId || !sellerId || !buyerId) {
+      if (!sellerId || !buyerId) {
          return res.status(400).json({ success: false, message: '필수 값이 누락되었습니다.' })
       }
 
