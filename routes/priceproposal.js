@@ -6,7 +6,7 @@ const { Op } = require('sequelize')
 
 /**
  * @swagger
- * /price-proposals:
+ * /priceProposal:
  *   post:
  *     summary: 가격 제안 생성
  *     description: 사용자가 특정 아이템에 대해 가격 제안을 등록합니다.
@@ -103,7 +103,7 @@ router.post('/', isLoggedIn, async (req, res) => {
 })
 /**
  * @swagger
- * /price-proposals/user/sent:
+ * /priceProposal/user/sent:
  *   get:
  *     summary: 내가 보낸 가격 제안들 조회
  *     description: 현재 로그인된 사용자가 보낸 모든 가격 제안을 조회합니다.
@@ -192,7 +192,7 @@ router.get('/user/sent', isLoggedIn, async (req, res) => {
 })
 /**
  * @swagger
- * /price-proposals/user/received:
+ * /priceProposal/user/received:
  *   get:
  *     summary: 내가 받은 가격 제안들 조회
  *     description: 현재 로그인된 사용자의 상품들에 대해 받은 모든 가격 제안을 조회합니다.
@@ -290,7 +290,7 @@ router.get('/user/received', isLoggedIn, async (req, res) => {
 })
 /**
  * @swagger
- * /price-proposals/user/completed:
+ * /priceProposal/user/completed:
  *   get:
  *     summary: 거래 완료된 내역 조회
  *     description: 현재 로그인된 사용자와 관련된 모든 거래 완료 내역을 조회합니다.
@@ -395,7 +395,7 @@ router.get('/user/completed', isLoggedIn, async (req, res) => {
 
 /**
  * @swagger
- * /price-proposals/{itemId}:
+ * /priceProposal/{itemId}:
  *   get:
  *     summary: 특정 아이템 가격 제안 리스트 조회
  *     description: 특정 아이템에 대해 사용자가 제안한 가격 리스트를 조회합니다.
@@ -446,6 +446,7 @@ router.get('/:itemId', isLoggedIn, async (req, res) => {
          price: p.proposedPrice,
          deliveryMethod: p.deliveryMethod,
          userName: p.user?.nick || '익명',
+         userId: p.user?.id,
          userAvatar: '/images/로그인상태.png',
          createdAt: p.createdAt,
          status: p.status || 'pending', // 상태도 같이 전달
@@ -460,7 +461,7 @@ router.get('/:itemId', isLoggedIn, async (req, res) => {
 
 /**
  * @swagger
- * /price-proposals/{proposalId}/status:
+ * /priceProposal/{proposalId}/status:
  *   patch:
  *     summary: 가격 제안 상태 변경
  *     description: 아이템 소유자가 특정 가격 제안의 상태를 변경합니다.
