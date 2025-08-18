@@ -669,12 +669,14 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
 
          await RentalImg.bulkCreate(imageData)
       }
-
       // 키워드 업데이트
       if (keywords !== undefined) {
          try {
             // 기존 키워드 연결 삭제
-            await ItemKeyword.destroy({ where: { rentalItemId: id } })
+            await ItemKeyword.destroy({
+               where: { rentalItemId: id },
+               force: true,
+            })
 
             if (keywords && keywords.trim()) {
                const keywordArray = keywords
@@ -691,6 +693,8 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
                   await ItemKeyword.create({
                      rentalItemId: id,
                      keywordId: keyword.id,
+                     startAt: new Date(),
+                     endAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
                   })
                }
             }
