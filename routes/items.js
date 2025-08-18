@@ -382,12 +382,10 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
 
       // status가 undefined나 null인 경우 처리
       if (!status) {
-         console.log('status가 없어서 SELL로 설정')
          var mappedStatus = 'SELL'
       } else {
          // 공백 제거 후 처리
          const cleanStatus = status.toString().trim()
-         console.log('공백 제거 후 status:', cleanStatus)
 
          // 상태값 매핑
          const statusMapping = {
@@ -402,10 +400,6 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
 
          mappedStatus = statusMapping[cleanStatus] || 'SELL'
       }
-
-      console.log('최종 매핑된 status:', mappedStatus)
-      console.log('최종 status 길이:', mappedStatus.length)
-      console.log('최종 status JSON:', JSON.stringify(mappedStatus))
 
       // 상품 생성
       const newItem = await Item.create({
