@@ -58,14 +58,12 @@ module.exports = class User extends Sequelize.Model {
    }
 
    static associate(db) {
-      // User -> Order (1:N)
       db.User.hasMany(db.Order, {
          foreignKey: 'userId',
          sourceKey: 'id',
          as: 'orders',
       })
 
-      // User -> RentalOrder (1:N)
       db.User.hasMany(db.RentalOrder, {
          foreignKey: 'userId',
          sourceKey: 'id',
@@ -78,28 +76,24 @@ module.exports = class User extends Sequelize.Model {
          as: 'ratings',
       })
 
-      // User -> Item (1:N)
       db.User.hasMany(db.Item, {
          foreignKey: 'userId',
          sourceKey: 'id',
          as: 'items',
       })
 
-      // User -> RentalItem (1:N)
       db.User.hasMany(db.RentalItem, {
          foreignKey: 'userId',
          sourceKey: 'id',
          as: 'rentalItems',
       })
 
-      // Buyer → Chat
       db.User.hasMany(db.Chat, {
          foreignKey: 'buyerId',
          sourceKey: 'id',
          as: 'buyChats',
       })
 
-      // Seller → Chat
       db.User.hasMany(db.Chat, {
          foreignKey: 'sellerId',
          sourceKey: 'id',
