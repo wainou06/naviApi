@@ -59,7 +59,7 @@ const { isLoggedIn } = require('./middlewares')
  *         description: 서버 오류
  */
 
-router.post('/', isLoggedIn, async (req, res) => {
+router.post('/', isLoggedIn, async (req, res, next) => {
    try {
       const { items, orderStatus, useStart, useEnd, purchaseMethod } = req.body
       const userId = req.user.id
@@ -94,7 +94,9 @@ router.post('/', isLoggedIn, async (req, res) => {
 
       res.status(201).json(newOrder)
    } catch (error) {
-      res.status(500).json({ error: error.message })
+      error.status = 500
+      error.message = '주문 생성 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
@@ -165,7 +167,9 @@ router.get('/list', isLoggedIn, async (req, res) => {
          pagination: { total: orders.count, page: parseInt(page), limit: parseInt(limit) },
       })
    } catch (error) {
-      res.status(500).json({ error: error.message })
+      error.status = 500
+      error.message = '주문 목록 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
@@ -238,7 +242,9 @@ router.get('/:id', isLoggedIn, async (req, res) => {
       if (!order) return res.status(404).json({ error: 'Order not found' })
       res.json(order)
    } catch (error) {
-      res.status(500).json({ error: error.message })
+      error.status = 500
+      error.message = '주문 상세 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
@@ -295,7 +301,7 @@ router.get('/:id', isLoggedIn, async (req, res) => {
  *         description: 서버 오류
  */
 
-router.post('/cancel/:id', isLoggedIn, async (req, res) => {
+router.post('/cancel/:id', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
       const order = await Order.findOne({ where: { id: req.params.id, userId } })
@@ -306,7 +312,9 @@ router.post('/cancel/:id', isLoggedIn, async (req, res) => {
 
       res.json({ message: '주문이 취소되었습니다.', order })
    } catch (error) {
-      res.status(500).json({ error: error.message })
+      error.status = 500
+      error.message = '주문 취소 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
@@ -336,7 +344,7 @@ router.post('/cancel/:id', isLoggedIn, async (req, res) => {
  *         description: 서버 오류
  */
 
-router.delete('/delete/:id', isLoggedIn, async (req, res) => {
+router.delete('/delete/:id', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
       const order = await Order.findOne({ where: { id: req.params.id, userId } })
@@ -345,7 +353,9 @@ router.delete('/delete/:id', isLoggedIn, async (req, res) => {
       await order.destroy()
       res.status(204).end()
    } catch (error) {
-      res.status(500).json({ error: error.message })
+       error.status = 500
+       error.message = '주문 삭제 중 오류가 발생했습니다.'
+       next(error)
    }
 })
 

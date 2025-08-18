@@ -73,7 +73,7 @@ const { Op } = require('sequelize')
  *         description: 서버 오류
  */
 
-router.post('/', isLoggedIn, async (req, res) => {
+router.post('/', isLoggedIn, async (req, res, next) => {
    try {
       const { itemId, proposedPrice, message } = req.body
       const userId = req.user.id
@@ -97,8 +97,9 @@ router.post('/', isLoggedIn, async (req, res) => {
 
       res.status(201).json(newProposal)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '가격 제안 생성 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 /**
@@ -164,8 +165,7 @@ router.post('/', isLoggedIn, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-//내가 보낸 가격 제안들 조회
-router.get('/user/sent', isLoggedIn, async (req, res) => {
+router.get('/user/sent', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
 
@@ -186,10 +186,12 @@ router.get('/user/sent', isLoggedIn, async (req, res) => {
 
       res.json(proposals)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '보낸 가격 제안 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
+
 /**
  * @swagger
  * /priceProposal/user/received:
@@ -257,8 +259,7 @@ router.get('/user/sent', isLoggedIn, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-// 내가 받은 가격 제안들 조회 (내 상품)
-router.get('/user/received', isLoggedIn, async (req, res) => {
+router.get('/user/received', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
 
@@ -284,10 +285,12 @@ router.get('/user/received', isLoggedIn, async (req, res) => {
 
       res.json(proposals)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '받은 가격 제안들 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
+
 /**
  * @swagger
  * /priceProposal/user/completed:
@@ -358,8 +361,7 @@ router.get('/user/received', isLoggedIn, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-//내 거래 완료된 내역 조회
-router.get('/user/completed', isLoggedIn, async (req, res) => {
+router.get('/user/completed', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
 
@@ -388,8 +390,9 @@ router.get('/user/completed', isLoggedIn, async (req, res) => {
 
       res.json(completedDeals)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '거래 완료 내역 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
@@ -425,7 +428,7 @@ router.get('/user/completed', isLoggedIn, async (req, res) => {
  *                   example: 서버 에러 발생
  */
 
-router.get('/:itemId', isLoggedIn, async (req, res) => {
+router.get('/:itemId', isLoggedIn, async (req, res, next) => {
    try {
       const { itemId } = req.params
 
@@ -454,8 +457,9 @@ router.get('/:itemId', isLoggedIn, async (req, res) => {
 
       res.json(result)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '특정 아이템 가격 제안 리스트 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
@@ -500,7 +504,7 @@ router.get('/:itemId', isLoggedIn, async (req, res) => {
  *         description: 서버 오류
  */
 
-router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
+router.patch('/:proposalId/status', isLoggedIn, async (req, res, next) => {
    const { proposalId } = req.params
    const { status } = req.body
 
@@ -546,8 +550,9 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
       })
    } catch (error) {
       await t.rollback()
-      console.error(error)
-      res.status(500).json({ message: '서버 오류 발생' })
+      error.status = 500
+      error.message = '가격 제안 상태 변경 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
