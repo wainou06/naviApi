@@ -449,7 +449,7 @@ router.get(
  *                   type: string
  *                   example: 임시 비밀번호를 발급하는 중 오류가 발생했습니다.
  */
-router.post('/forgot-password-email', async (req, res) => {
+router.post('/forgot-password-email', async (req, res, next) => {
    const { email } = req.body
    try {
       const user = await User.findOne({ where: { email } })
@@ -527,7 +527,7 @@ router.post('/forgot-password-email', async (req, res) => {
  *                   type: string
  *                   example: 임시 비밀번호를 발급하는 중 오류가 발생했습니다.
  */
-router.post('/forgot-password-phone', async (req, res) => {
+router.post('/forgot-password-phone', async (req, res, next) => {
    const { phone } = req.body
 
    try {
