@@ -600,12 +600,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
       const id = req.params.id
       const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus, keywords, deleteImages } = req.body
 
-      console.log('=== 서버에서 받은 데이터 ===')
-      console.log('전체 body:', req.body)
-      console.log('deleteImages:', deleteImages, '타입:', typeof deleteImages)
-      console.log('keywords:', keywords, '타입:', typeof keywords)
-      console.log('=============================')
-
       const rentalItem = await RentalItem.findByPk(id)
 
       if (!rentalItem) {
@@ -623,10 +617,7 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
       if (rentalDetail !== undefined) updateData.rentalDetail = rentalDetail
       if (rentalStatus !== undefined) updateData.rentalStatus = rentalStatus
 
-      console.log('업데이트할 데이터:', updateData)
-
       await rentalItem.update(updateData)
-      console.log('기본 정보 업데이트 완료')
 
       // 삭제할 이미지가 있을 경우
       if (deleteImages) {
@@ -637,8 +628,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
             } else if (Array.isArray(deleteImages)) {
                imageIdsToDelete = deleteImages
             }
-
-            console.log('삭제할 이미지 IDs:', imageIdsToDelete)
 
             if (Array.isArray(imageIdsToDelete) && imageIdsToDelete.length > 0) {
                const imagesToDelete = await RentalImg.findAll({
@@ -652,9 +641,8 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
                   const filePath = path.join(__dirname, '..', 'uploads', image.imgUrl.replace('/uploads/', ''))
                   try {
                      fs.unlinkSync(filePath)
-                     console.log('파일 삭제 완료:', filePath)
                   } catch (err) {
-                     console.log('파일 삭제 실패:', err.message)
+                     console.error('파일 삭제 실패:', err.message)
                   }
                })
 
@@ -664,7 +652,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
                      id: { [Op.in]: imageIdsToDelete },
                   },
                })
-               console.log('DB에서 이미지 레코드 삭제 완료')
             }
          } catch (imageDeleteError) {
             console.error('이미지 삭제 중 오류:', imageDeleteError)
@@ -681,7 +668,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
          }))
 
          await RentalImg.bulkCreate(imageData)
-         console.log('새 이미지 추가 완료')
       }
 
       // 키워드 업데이트
@@ -689,15 +675,12 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
          try {
             // 기존 키워드 연결 삭제
             await ItemKeyword.destroy({ where: { rentalItemId: id } })
-            console.log('기존 키워드 연결 삭제 완료')
 
             if (keywords && keywords.trim()) {
                const keywordArray = keywords
                   .split(',')
                   .map((k) => k.trim())
                   .filter((k) => k)
-
-               console.log('새 키워드 배열:', keywordArray)
 
                for (const keywordName of keywordArray) {
                   const [keyword] = await Keyword.findOrCreate({
@@ -710,7 +693,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
                      keywordId: keyword.id,
                   })
                }
-               console.log('키워드 업데이트 완료')
             }
          } catch (keywordError) {
             console.error('키워드 업데이트 중 오류:', keywordError)
@@ -737,8 +719,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
             },
          ],
       })
-
-      console.log('최종 응답 데이터:', updatedRentalItem)
 
       res.status(200).json({
          success: true,
