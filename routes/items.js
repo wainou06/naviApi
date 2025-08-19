@@ -7,10 +7,9 @@ const { isLoggedIn } = require('./middlewares')
 const fs = require('fs')
 const router = express.Router()
 
-// multer 설정 (이미지 업로드)
 const storage = multer.diskStorage({
    destination: (req, file, cb) => {
-      cb(null, 'uploads/') // uploads 폴더에 저장
+      cb(null, 'uploads/')
    },
    filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
@@ -21,7 +20,7 @@ const storage = multer.diskStorage({
 const upload = multer({
    storage: storage,
    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB 제한
+      fileSize: 5 * 1024 * 1024,
    },
    fileFilter: (req, file, cb) => {
       if (file.mimetype.startsWith('image/')) {
@@ -107,14 +106,13 @@ const upload = multer({
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// GET /items/list - 상품 목록 조회 (검색, 페이징 기능)
+//상품 목록 조회 (검색, 페이징 기능) /items/list
 router.get('/list', async (req, res, next) => {
    try {
       const { page = 1, limit = 10, searchTerm = '', searchCategory = '', sellCategory = '' } = req.query
 
       const offset = (page - 1) * limit
 
-      // 검색 조건 설정
       let whereClause = {}
 
       if (searchTerm) {
@@ -127,7 +125,6 @@ router.get('/list', async (req, res, next) => {
          whereClause.itemSellStatus = sellCategory
       }
 
-      // 상품 목록 조회
       const { count, rows } = await Item.findAndCountAll({
          where: whereClause,
          include: [
@@ -217,7 +214,7 @@ router.get('/list', async (req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// GET /items/detail/:id - 상품 상세 조회
+// 상품 상세 조회 /items/detail/:id
 router.get('/detail/:id', async (req, res, next) => {
    try {
       const { id } = req.params
@@ -248,7 +245,7 @@ router.get('/detail/:id', async (req, res, next) => {
                      model: User,
                      as: 'user',
                      required: false,
-                     attributes: ['id', 'name', 'email'], // 민감한 정보 제외
+                     attributes: ['id', 'name', 'email'],
                   },
                ],
             },
@@ -367,12 +364,11 @@ router.get('/detail/:id', async (req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// POST /items - 상품 등록
+// 상품 등록 items/create
 router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
    try {
       const { name, price, stock, content, status, keywords } = req.body
 
-      // 필수 필드 검증
       if (!name || !price || !content) {
          return res.status(400).json({
             success: false,
@@ -380,14 +376,11 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
          })
       }
 
-      // status가 undefined나 null인 경우 처리
       if (!status) {
          var mappedStatus = 'SELL'
       } else {
-         // 공백 제거 후 처리
          const cleanStatus = status.toString().trim()
 
-         // 상태값 매핑
          const statusMapping = {
             sell: 'SELL',
             sold_out: 'SOLD_OUT',
@@ -401,16 +394,14 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
          mappedStatus = statusMapping[cleanStatus] || 'SELL'
       }
 
-      // 상품 생성
       const newItem = await Item.create({
          itemNm: name,
          price: parseInt(price),
-         itemSellStatus: mappedStatus, // 검증된 status 값 사용
+         itemSellStatus: mappedStatus,
          itemDetail: content,
          userId: req.user.id,
       })
 
-      // 이미지 저장
       if (req.files && req.files.length > 0) {
          const imagePromises = req.files.map((file, index) => {
             return Img.create({
@@ -423,7 +414,6 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
          await Promise.all(imagePromises)
       }
 
-      // 키워드 저장
       if (keywords) {
          const keywordArray = keywords
             .split(',')
@@ -445,7 +435,6 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
          }
       }
 
-      // 생성된 상품 정보 조회
       const createdItem = await Item.findByPk(newItem.id, {
          include: [
             {
@@ -567,13 +556,12 @@ router.post('/', isLoggedIn, upload.array('img', 5), async (req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// PUT /items/edit/:id - 상품 수정
+// 상품 수정 /items/edit/:id
 router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
    try {
       const { id } = req.params
       const { name, price, stock, content, status, keywords, deleteImages } = req.body
 
-      // 상품 존재 확인
       const item = await Item.findByPk(id)
       if (!item) {
          return res.status(404).json({
@@ -582,12 +570,10 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
          })
       }
 
-      // 상품 정보 업데이트
       const updateData = {}
       if (name !== undefined) updateData.itemNm = name
       if (price !== undefined) updateData.price = parseInt(price)
       if (status !== undefined) {
-         // 상태값 매핑
          const statusMapping = {
             sell: 'SELL',
             sold_out: 'SOLD_OUT',
@@ -599,25 +585,20 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
 
       await item.update(updateData)
 
-      // 삭제할 이미지가 있을 경우 처리
       if (deleteImages && deleteImages.length > 0) {
-         // 삭제할 이미지 ID들 처리
-         const imageIdsToDelete = JSON.parse(deleteImages) // JSON으로 받은 삭제할 이미지 리스트
+         const imageIdsToDelete = JSON.parse(deleteImages)
 
-         // 해당 이미지들을 데이터베이스에서 삭제
          const imagesToDelete = await Img.findAll({
             where: {
                id: { [Op.in]: imageIdsToDelete },
             },
          })
 
-         // 파일 시스템에서 이미지 파일 삭제
          imagesToDelete.forEach((image) => {
             const filePath = path.join(__dirname, '..', 'uploads', image.imgUrl.replace('/uploads/', ''))
-            fs.unlinkSync(filePath) // 이미지 파일 삭제
+            fs.unlinkSync(filePath)
          })
 
-         // 이미지 DB에서 삭제
          await Img.destroy({
             where: {
                id: { [Op.in]: imageIdsToDelete },
@@ -625,9 +606,7 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
          })
       }
 
-      // 새로운 이미지가 있는 경우 추가
       if (req.files && req.files.length > 0) {
-         // 현재 남아있는 이미지 개수 확인
          const existingImageCount = await Img.count({
             where: { itemId: item.id },
          })
@@ -636,7 +615,6 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
             return Img.create({
                originName: file.originalname,
                imgUrl: `/uploads/${file.filename}`,
-               //기존 이미지가 없고 첫 번째 새 이미지면 Y
                field: existingImageCount === 0 && index === 0 ? 'Y' : 'N',
                itemId: item.id,
             })
@@ -644,14 +622,11 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
          await Promise.all(imagePromises)
       }
 
-      // 키워드 업데이트
       if (keywords !== undefined) {
-         // 기존 키워드 관계 삭제
          await ItemKeyword.destroy({
             where: { itemId: item.id },
          })
 
-         // 새로운 키워드 추가
          if (keywords) {
             const keywordArray = keywords
                .split(',')
@@ -674,7 +649,6 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
          }
       }
 
-      // 수정된 상품 정보 조회
       const updatedItem = await Item.findByPk(id, {
          include: [
             {
@@ -747,12 +721,11 @@ router.put('/edit/:id', upload.array('img', 5), async (req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// DELETE /items/:id - 상품 삭제
+// 상품 삭제 /items/:id
 router.delete('/:id', async (req, res, next) => {
    try {
       const { id } = req.params
 
-      // 상품 존재 확인
       const item = await Item.findByPk(id)
       if (!item) {
          return res.status(404).json({
@@ -761,7 +734,6 @@ router.delete('/:id', async (req, res, next) => {
          })
       }
 
-      // 관련 데이터들도 함께 삭제 (Cascade 설정으로 자동 삭제됨)
       await ItemKeyword.destroy({
          where: { itemId: id },
       })
@@ -770,7 +742,6 @@ router.delete('/:id', async (req, res, next) => {
          where: { itemId: id },
       })
 
-      // 상품 삭제 (paranoid: true로 설정되어 있어 soft delete)
       await item.destroy()
 
       res.status(200).json({
