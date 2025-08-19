@@ -5,12 +5,7 @@ module.exports = class Order extends Sequelize.Model {
       return super.init(
          {
             orderStatus: {
-               type: Sequelize.ENUM(
-                  'PAYMENT_PENDING', // 결제 대기 중 (거래 제안 대기)
-                  'PAID', // 결제 완료 (거래 진행 중)
-                  'CANCELLED', // 거래 취소
-                  'COMPLETED' // 거래 완료 (물건 인수인계 완료)
-               ),
+               type: Sequelize.ENUM('PAYMENT_PENDING', 'PAID', 'CANCELLED', 'COMPLETED'),
                allowNull: false,
                defaultValue: 'PAYMENT_PENDING',
             },

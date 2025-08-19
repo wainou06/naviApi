@@ -6,7 +6,7 @@ module.exports = class Chat extends Sequelize.Model {
          {
             itemId: {
                type: Sequelize.INTEGER,
-               allowNull: false,
+               allowNull: true,
                references: {
                   model: 'Items',
                   key: 'id',

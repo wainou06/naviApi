@@ -6,7 +6,7 @@ const { Op } = require('sequelize')
 
 /**
  * @swagger
- * /price-proposals:
+ * /priceProposal:
  *   post:
  *     summary: 가격 제안 생성
  *     description: 사용자가 특정 아이템에 대해 가격 제안을 등록합니다.
@@ -73,7 +73,7 @@ const { Op } = require('sequelize')
  *         description: 서버 오류
  */
 
-router.post('/', isLoggedIn, async (req, res) => {
+router.post('/', isLoggedIn, async (req, res, next) => {
    try {
       const { itemId, proposedPrice, message } = req.body
       const userId = req.user.id
@@ -97,13 +97,14 @@ router.post('/', isLoggedIn, async (req, res) => {
 
       res.status(201).json(newProposal)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '가격 제안 생성 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 /**
  * @swagger
- * /price-proposals/user/sent:
+ * /priceProposal/user/sent:
  *   get:
  *     summary: 내가 보낸 가격 제안들 조회
  *     description: 현재 로그인된 사용자가 보낸 모든 가격 제안을 조회합니다.
@@ -164,8 +165,7 @@ router.post('/', isLoggedIn, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-//내가 보낸 가격 제안들 조회
-router.get('/user/sent', isLoggedIn, async (req, res) => {
+router.get('/user/sent', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
 
@@ -186,13 +186,15 @@ router.get('/user/sent', isLoggedIn, async (req, res) => {
 
       res.json(proposals)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '보낸 가격 제안 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
+
 /**
  * @swagger
- * /price-proposals/user/received:
+ * /priceProposal/user/received:
  *   get:
  *     summary: 내가 받은 가격 제안들 조회
  *     description: 현재 로그인된 사용자의 상품들에 대해 받은 모든 가격 제안을 조회합니다.
@@ -257,8 +259,7 @@ router.get('/user/sent', isLoggedIn, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-// 내가 받은 가격 제안들 조회 (내 상품)
-router.get('/user/received', isLoggedIn, async (req, res) => {
+router.get('/user/received', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
 
@@ -284,13 +285,15 @@ router.get('/user/received', isLoggedIn, async (req, res) => {
 
       res.json(proposals)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '받은 가격 제안들 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
+
 /**
  * @swagger
- * /price-proposals/user/completed:
+ * /priceProposal/user/completed:
  *   get:
  *     summary: 거래 완료된 내역 조회
  *     description: 현재 로그인된 사용자와 관련된 모든 거래 완료 내역을 조회합니다.
@@ -358,8 +361,7 @@ router.get('/user/received', isLoggedIn, async (req, res) => {
  *       500:
  *         description: 서버 오류
  */
-//내 거래 완료된 내역 조회
-router.get('/user/completed', isLoggedIn, async (req, res) => {
+router.get('/user/completed', isLoggedIn, async (req, res, next) => {
    try {
       const userId = req.user.id
 
@@ -372,9 +374,10 @@ router.get('/user/completed', isLoggedIn, async (req, res) => {
             {
                model: Item,
                as: 'item',
+               required: true,
                include: [
                   { model: User, as: 'user', attributes: ['id', 'nick'] },
-                  { model: Img, as: 'imgs' }, // 이미지 관계 추가
+                  { model: Img, as: 'imgs' },
                ],
             },
             {
@@ -388,14 +391,15 @@ router.get('/user/completed', isLoggedIn, async (req, res) => {
 
       res.json(completedDeals)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '거래 완료 내역 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
 /**
  * @swagger
- * /price-proposals/{itemId}:
+ * /priceProposal/{itemId}:
  *   get:
  *     summary: 특정 아이템 가격 제안 리스트 조회
  *     description: 특정 아이템에 대해 사용자가 제안한 가격 리스트를 조회합니다.
@@ -425,7 +429,7 @@ router.get('/user/completed', isLoggedIn, async (req, res) => {
  *                   example: 서버 에러 발생
  */
 
-router.get('/:itemId', isLoggedIn, async (req, res) => {
+router.get('/:itemId', isLoggedIn, async (req, res, next) => {
    try {
       const { itemId } = req.params
 
@@ -446,21 +450,23 @@ router.get('/:itemId', isLoggedIn, async (req, res) => {
          price: p.proposedPrice,
          deliveryMethod: p.deliveryMethod,
          userName: p.user?.nick || '익명',
+         userId: p.user?.id,
          userAvatar: '/images/로그인상태.png',
          createdAt: p.createdAt,
-         status: p.status || 'pending', // 상태도 같이 전달
+         status: p.status || 'pending',
       }))
 
       res.json(result)
    } catch (error) {
-      console.error(error)
-      res.status(500).json({ error: '서버 에러 발생' })
+      error.status = 500
+      error.message = '특정 아이템 가격 제안 리스트 조회 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 
 /**
  * @swagger
- * /price-proposals/{proposalId}/status:
+ * /priceProposal/{proposalId}/status:
  *   patch:
  *     summary: 가격 제안 상태 변경
  *     description: 아이템 소유자가 특정 가격 제안의 상태를 변경합니다.
@@ -499,7 +505,7 @@ router.get('/:itemId', isLoggedIn, async (req, res) => {
  *         description: 서버 오류
  */
 
-router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
+router.patch('/:proposalId/status', isLoggedIn, async (req, res, next) => {
    const { proposalId } = req.params
    const { status } = req.body
 
@@ -507,8 +513,8 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
    try {
       const proposal = await PriceProposal.findByPk(proposalId, {
          include: [
-            { model: Item, as: 'item', include: [{ model: User, as: 'user', attributes: ['id', 'nick'] }] }, // 판매자 정보
-            { model: User, as: 'user', attributes: ['id', 'nick'] }, // 제안자 정보
+            { model: Item, as: 'item', include: [{ model: User, as: 'user', attributes: ['id', 'nick'] }] },
+            { model: User, as: 'user', attributes: ['id', 'nick'] },
          ],
          transaction: t,
          lock: t.LOCK.UPDATE,
@@ -538,15 +544,16 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res) => {
          message: '상태가 변경되었습니다.',
          updatedProposal: {
             ...proposal.toJSON(),
-            buyer: proposal.user.toJSON(), // 구매자(제안자)
-            seller: proposal.item.user.toJSON(), // 판매자
+            buyer: proposal.user.toJSON(),
+            seller: proposal.item.user.toJSON(),
             item: proposal.item.toJSON(),
          },
       })
    } catch (error) {
       await t.rollback()
-      console.error(error)
-      res.status(500).json({ message: '서버 오류 발생' })
+      error.status = 500
+      error.message = '가격 제안 상태 변경 중 오류가 발생했습니다.'
+      next(error)
    }
 })
 

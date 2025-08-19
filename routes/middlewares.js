@@ -1,11 +1,5 @@
 // 로그인 상태확인
 exports.isLoggedIn = (req, res, next) => {
-   // console.log('---- isLoggedIn 호출 ----')
-   // console.log('req.cookies:', req.cookies)
-   // console.log('req.session:', req.session)
-   // console.log('req.user:', req.user)
-   // console.log('req.isAuthenticated():', req.isAuthenticated())
-   // ↑ 테스트용
    if (req.isAuthenticated()) {
       next()
    } else {
@@ -27,7 +21,6 @@ exports.isNotLoggedIn = (req, res, next) => {
 }
 
 //매니저 상태확인
-
 exports.isManager = (req, res, next) => {
    if (req.isAuthenticated()) {
       if (req.user && req.user.access === 'MANAGER') {
@@ -45,7 +38,6 @@ exports.isManager = (req, res, next) => {
 }
 
 //정지 상태확인
-
 exports.isSuspended = (req, res, next) => {
    const datePass = (date) => {
       if (!date) return true

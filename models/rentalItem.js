@@ -39,7 +39,6 @@ module.exports = class RentalItem extends Sequelize.Model {
    }
 
    static associate(db) {
-      // RentalItem <-> RentalOrder
       db.RentalItem.belongsToMany(db.RentalOrder, {
          through: db.RentalOrderItem,
          foreignKey: 'rentalItemId',
@@ -47,7 +46,6 @@ module.exports = class RentalItem extends Sequelize.Model {
          as: 'rentalOrders',
       })
 
-      // RentalItem -> RentalImg (1:N)
       db.RentalItem.hasMany(db.RentalImg, {
          foreignKey: 'rentalItemId',
          sourceKey: 'id',
@@ -59,10 +57,9 @@ module.exports = class RentalItem extends Sequelize.Model {
          sourceKey: 'id',
       })
 
-      // RentalItem -> User (N:1)
       db.RentalItem.belongsTo(db.User, {
          foreignKey: 'userId',
-         targetKey: 'id', // User 모델의 id와 연결
+         targetKey: 'id',
       })
    }
 }
