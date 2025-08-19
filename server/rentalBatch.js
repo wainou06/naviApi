@@ -1,4 +1,4 @@
-const { RentalOrder, RentalOrderItem, RentalItem } = require('../models')
+const { RentalOrder, RentalOrderItem, RentalItem, sequelize } = require('../models')
 const { Op } = require('sequelize')
 
 function startRentalBatchJob() {
@@ -21,13 +21,24 @@ function startRentalBatchJob() {
          })
 
          for (const order of expiredOrders) {
-            for (const orderItem of order.rentalOrderItems) {
-               await RentalItem.increment('quantity', {
-                  by: orderItem.quantity,
-                  where: { id: orderItem.rentalItemId },
-               })
+            const t = await sequelize.transaction()
+            try {
+               for (const orderItem of order.rentalOrderItems) {
+                  await RentalItem.increment(
+                     'quantity',
+                     {
+                        by: orderItem.quantity,
+                        where: { id: orderItem.rentalItemId },
+                     },
+                     { transaction: t }
+                  )
+               }
+               await order.update({ orderStatus: 'completed' }, { transaction: t })
+               await t.commit()
+            } catch (error) {
+               await t.rollback()
+               throw error
             }
-            await order.update({ orderStatus: 'completed' })
          }
       } catch (error) {
          console.error('렌탈 재고 복원 오류:', error)
@@ -35,8 +46,7 @@ function startRentalBatchJob() {
    }
 
    runBatch()
-
-   setInterval(runBatch, 30 * 1000)
+   setInterval(runBatch, 60 * 1000)
 }
 
 module.exports = { startRentalBatchJob }
