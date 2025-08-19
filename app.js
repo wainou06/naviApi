@@ -25,6 +25,7 @@ const matchingRouter = require('./routes/matching')
 const priceProposalRouter = require('./routes/priceproposal')
 const infoRouter = require('./routes/info')
 const chatRouter = require('./routes/chat')
+const ratingRouter = require('./routes/rating')
 
 // DB 연결
 sequelize
@@ -86,6 +87,7 @@ app.use('/matching', matchingRouter)
 app.use('/priceProposal', priceProposalRouter)
 app.use('/info', infoRouter)
 app.use('/chats', chatRouter)
+app.use('/rating', ratingRouter)
 
 // 404
 app.use((req, res, next) => {
