@@ -372,9 +372,10 @@ router.get('/user/completed', isLoggedIn, async (req, res) => {
             {
                model: Item,
                as: 'item',
+               required: true,
                include: [
                   { model: User, as: 'user', attributes: ['id', 'nick'] },
-                  { model: Img, as: 'imgs' }, // 이미지 관계 추가
+                  { model: Img, as: 'imgs' },
                ],
             },
             {
