@@ -29,7 +29,6 @@ module.exports = class Item extends Sequelize.Model {
                },
             },
             userId: {
-               // 유저 외래 키 추가
                type: Sequelize.INTEGER,
                allowNull: false,
                references: {
