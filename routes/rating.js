@@ -23,20 +23,20 @@ router.get('/:id', isLoggedIn, async (req, res, next) => {
    }
 })
 
-router.post('/:id', isLoggedIn, async (req, res, next) => {
+router.post('/', isLoggedIn, async (req, res, next) => {
    try {
-      const data = req.body
+      const data = req.body.data
 
-      const trade = await PriceProposal.findOne({
-         where: { id: req.params.id },
+      const exRating = await Rating.findOne({
+         where: {},
       })
-      console.log(trade)
 
       const rating = await Rating.create({
          toUserId: data.toUserId,
          fromUserId: data.fromUserId,
          rating: data.rating,
          comment: data.comment,
+         userId: data.userId,
          orderId: data.orderId,
          rentalOrderId: data.rentalOrderId,
       })
@@ -48,7 +48,7 @@ router.post('/:id', isLoggedIn, async (req, res, next) => {
       })
    } catch (error) {
       error.status = 500
-      error.message = '별점 등록 중 오류가 발생했습니다.'
+      error.message = `별점 등록 중 오류가 발생했습니다. ${error}`
       next(error)
    }
 })
