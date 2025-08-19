@@ -104,4 +104,13 @@ app.use((err, req, res, next) => {
    res.status(statusCode).json({ success: false, message, error: err })
 })
 
+// app.js (혹은 server.js)
+app.use((err, req, res, next) => {
+   console.error(err) // 서버 콘솔
+   res.status(err.status || 500).json({
+      field: err.field || null,
+      message: err.message || '알 수 없는 오류입니다.',
+   })
+})
+
 module.exports = app

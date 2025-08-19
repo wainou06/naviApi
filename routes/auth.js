@@ -9,56 +9,88 @@ const router = express.Router()
 /**
  * @swagger
  * /auth/join:
- *    post:
- *       summary: 사용자 회원가입
- *       tags: [Auth]
- *       requestBody:
- *          required: true
- *          content:
- *             application/json:
- *                schema:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: 회원가입
+ *     description: 새 사용자를 등록합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - name
+ *               - password
+ *               - nick
+ *               - phone
+ *               - address
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "test@example.com"
+ *               name:
+ *                 type: string
+ *                 example: "홍길동"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "Password123!"
+ *               nick:
+ *                 type: string
+ *                 example: "nickname"
+ *               phone:
+ *                 type: string
+ *                 example: "010-1234-5678"
+ *               address:
+ *                 type: string
+ *                 example: "서울시 강남구"
+ *     responses:
+ *       201:
+ *         description: 회원가입 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "회원가입을 성공하였습니다."
+ *                 user:
  *                   type: object
- *                   required:
- *                      - email
- *                      - name
- *                      - password
- *                      - nick
- *                      - phone
- *                      - address
  *                   properties:
- *                      email:
- *                         type: string
- *                      name:
- *                         type: string
- *                      address:
- *                         type: string
- *                      phone:
- *                         type: string
- *                      nick:
- *                         type: string
- *                      password:
- *                         type: string
- *          responses:
- *             201:
- *                description: 회원가입 성공
- *             409:
- *                description: 이미 존재하는 사용자
- *             500:
- *                description: 서버 오류
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "홍길동"
+ *                     access:
+ *                       type: string
+ *                       example: "USER"
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: "회원가입 중 오류가 발생했습니다."
  */
 router.post('/join', isNotLoggedIn, async (req, res, next) => {
    try {
       const { email, name, address, password, nick, phone } = req.body
-
-      const exUser = await User.findOne({
-         where: { email },
-      })
-
-      if (exUser) {
-         const error = new Error('이미 존재하는 사용자 입니다.')
-         error.status = 409
-         return next(error)
-      }
 
       const hash = await bcrypt.hash(password, 12)
 
@@ -85,6 +117,119 @@ router.post('/join', isNotLoggedIn, async (req, res, next) => {
       error.status = 500
       error.message = '회원가입 중 오류가 발생했습니다.'
       next(error)
+   }
+})
+
+/**
+ * @swagger
+ * /auth/check-email:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: 이메일 중복 확인
+ *     description: 입력한 이메일이 이미 등록되어 있는지 확인합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "test@example.com"
+ *     responses:
+ *       200:
+ *         description: 사용 가능한 이메일
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "사용 가능한 이메일입니다."
+ *       409:
+ *         description: 이미 존재하는 이메일
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 field:
+ *                   type: string
+ *                   example: "email"
+ *                 message:
+ *                   type: string
+ *                   example: "이미 존재하는 이메일입니다."
+ */
+router.post('/check-email', async (req, res, next) => {
+   try {
+      const { email } = req.body
+      const user = await User.findOne({ where: { email } })
+      if (user) return res.status(409).json({ field: 'email', message: '이미 존재하는 이메일입니다.' })
+      return res.json({ message: '사용 가능한 이메일입니다.' })
+   } catch (err) {
+      next(err)
+   }
+})
+
+/**
+ * @swagger
+ * /auth/check-nick:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: 닉네임 중복 확인
+ *     description: 입력한 닉네임이 이미 등록되어 있는지 확인합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nick
+ *             properties:
+ *               nick:
+ *                 type: string
+ *                 example: "nickname123"
+ *     responses:
+ *       200:
+ *         description: 사용 가능한 닉네임
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "사용 가능한 닉네임입니다."
+ *       409:
+ *         description: 이미 존재하는 닉네임
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 field:
+ *                   type: string
+ *                   example: "nick"
+ *                 message:
+ *                   type: string
+ *                   example: "이미 존재하는 닉네임입니다."
+ */
+router.post('/check-nick', async (req, res, next) => {
+   try {
+      const { nick } = req.body
+      const user = await User.findOne({ where: { nick } })
+      if (user) return res.status(409).json({ field: 'nick', message: '이미 존재하는 닉네임입니다.' })
+      return res.json({ message: '사용 가능한 닉네임입니다.' })
+   } catch (err) {
+      next(err)
    }
 })
 
