@@ -41,14 +41,12 @@ module.exports = class RentalOrder extends Sequelize.Model {
    }
 
    static associate(db) {
-      // RentalOrder -> User (N:1)
       db.RentalOrder.belongsTo(db.User, {
          foreignKey: 'userId',
          targetKey: 'id',
          as: 'user',
       })
 
-      // RentalOrder <-> RentalItem (다대다)
       db.RentalOrder.belongsToMany(db.RentalItem, {
          through: db.RentalOrderItem,
          foreignKey: 'rentalOrderId',
@@ -56,7 +54,6 @@ module.exports = class RentalOrder extends Sequelize.Model {
          as: 'rentalItems',
       })
 
-      // RentalOrder -> RentalOrderItem (1:N) : CASCADE 설정 추가
       db.RentalOrder.hasMany(db.RentalOrderItem, {
          foreignKey: 'rentalOrderId',
          sourceKey: 'id',
@@ -65,7 +62,6 @@ module.exports = class RentalOrder extends Sequelize.Model {
          as: 'rentalOrderItems',
       })
 
-      // 대여 주문에 대한 평점(옵션)
       db.RentalOrder.hasOne(db.Rating, {
          foreignKey: 'rentalOrderId',
          sourceKey: 'id',
