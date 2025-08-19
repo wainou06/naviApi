@@ -374,9 +374,10 @@ router.get('/user/completed', isLoggedIn, async (req, res, next) => {
             {
                model: Item,
                as: 'item',
+               required: true,
                include: [
                   { model: User, as: 'user', attributes: ['id', 'nick'] },
-                  { model: Img, as: 'imgs' }, // 이미지 관계 추가
+                  { model: Img, as: 'imgs' },
                ],
             },
             {
@@ -452,7 +453,7 @@ router.get('/:itemId', isLoggedIn, async (req, res, next) => {
          userId: p.user?.id,
          userAvatar: '/images/로그인상태.png',
          createdAt: p.createdAt,
-         status: p.status || 'pending', // 상태도 같이 전달
+         status: p.status || 'pending',
       }))
 
       res.json(result)
@@ -512,8 +513,8 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res, next) => {
    try {
       const proposal = await PriceProposal.findByPk(proposalId, {
          include: [
-            { model: Item, as: 'item', include: [{ model: User, as: 'user', attributes: ['id', 'nick'] }] }, // 판매자 정보
-            { model: User, as: 'user', attributes: ['id', 'nick'] }, // 제안자 정보
+            { model: Item, as: 'item', include: [{ model: User, as: 'user', attributes: ['id', 'nick'] }] },
+            { model: User, as: 'user', attributes: ['id', 'nick'] },
          ],
          transaction: t,
          lock: t.LOCK.UPDATE,
@@ -543,8 +544,8 @@ router.patch('/:proposalId/status', isLoggedIn, async (req, res, next) => {
          message: '상태가 변경되었습니다.',
          updatedProposal: {
             ...proposal.toJSON(),
-            buyer: proposal.user.toJSON(), // 구매자(제안자)
-            seller: proposal.item.user.toJSON(), // 판매자
+            buyer: proposal.user.toJSON(),
+            seller: proposal.item.user.toJSON(),
             item: proposal.item.toJSON(),
          },
       })

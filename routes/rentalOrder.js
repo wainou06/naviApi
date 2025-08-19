@@ -58,11 +58,10 @@ const router = express.Router()
  *       500:
  *         description: 서버 오류
  */
-
+//렌탈상품 주문
 router.post('/', isLoggedIn, async (req, res) => {
    try {
       const { orderStatus = 'pending', items, useStart, useEnd } = req.body
-      // items: [{ rentalItemId, quantity }, ...]
       if (!items || !Array.isArray(items) || items.length === 0) {
          return res.status(400).json({ success: false, message: '주문할 상품이 필요합니다.' })
       }
@@ -70,11 +69,10 @@ router.post('/', isLoggedIn, async (req, res) => {
          return res.status(400).json({ success: false, message: '대여 시작일과 종료일이 필요합니다.' })
       }
 
-      // 날짜 유효성 검사
       const startDate = new Date(useStart)
       const endDate = new Date(useEnd)
       const today = new Date()
-      today.setHours(0, 0, 0, 0) // 오늘 자정으로 설정
+      today.setHours(0, 0, 0, 0)
 
       if (startDate < today) {
          return res.status(400).json({ success: false, message: '시작일은 오늘 이후여야 합니다.' })
@@ -84,7 +82,6 @@ router.post('/', isLoggedIn, async (req, res) => {
          return res.status(400).json({ success: false, message: '종료일은 시작일보다 늦어야 합니다.' })
       }
 
-      // 렌탈 상품들의 재고 및 상태 확인
       for (const item of items) {
          const rentalItem = await RentalItem.findByPk(item.rentalItemId)
          if (!rentalItem) {
@@ -98,13 +95,11 @@ router.post('/', isLoggedIn, async (req, res) => {
          }
       }
 
-      // 총 수량 합산
       const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0)
       if (totalQuantity <= 0) {
          return res.status(400).json({ success: false, message: '유효한 수량이 필요합니다.' })
       }
 
-      // 주문 생성
       const rentalOrder = await RentalOrder.create({
          orderStatus,
          quantity: totalQuantity,
@@ -113,17 +108,14 @@ router.post('/', isLoggedIn, async (req, res) => {
          userId: req.user.id,
       })
 
-      // 주문 아이템 테이블에 insert
       const orderItemsData = items.map((item) => ({
          rentalOrderId: rentalOrder.id,
          rentalItemId: item.rentalItemId,
          quantity: item.quantity,
       }))
 
-      // RentalOrderItem 테이블에 한꺼번에 생성
       await RentalOrderItem.bulkCreate(orderItemsData)
 
-      // 렌탈 상품의 재고 감소
       for (const item of items) {
          await RentalItem.decrement('quantity', {
             by: item.quantity,
@@ -131,7 +123,6 @@ router.post('/', isLoggedIn, async (req, res) => {
          })
       }
 
-      // 생성된 주문을 상세 정보와 함께 반환
       const createdOrder = await RentalOrder.findByPk(rentalOrder.id, {
          include: [
             {
@@ -157,18 +148,16 @@ router.post('/', isLoggedIn, async (req, res) => {
    }
 })
 
-// 특정 렌탈 상품의 주문 목록 조회 (소유자/매니저용) - 누락된 엔드포인트 추가
+// 특정 렌탈 상품의 주문 목록 조회 (소유자/매니저용)
 router.get('/item/:rentalItemId', isLoggedIn, async (req, res) => {
    try {
       const rentalItemId = req.params.rentalItemId
 
-      // 렌탈 상품 존재 확인 및 권한 검사
       const rentalItem = await RentalItem.findByPk(rentalItemId)
       if (!rentalItem) {
          return res.status(404).json({ success: false, message: '렌탈 상품을 찾을 수 없습니다.' })
       }
 
-      // 소유자이거나 매니저인지 확인
       const isOwner = req.user.id === rentalItem.userId
       const isManager = req.user.access === 'MANAGER'
 
@@ -176,7 +165,6 @@ router.get('/item/:rentalItemId', isLoggedIn, async (req, res) => {
          return res.status(403).json({ success: false, message: '권한이 없습니다.' })
       }
 
-      // 해당 렌탈 상품의 주문 목록 조회
       const orders = await RentalOrder.findAll({
          include: [
             {
@@ -219,12 +207,12 @@ router.get('/:id', isLoggedIn, async (req, res) => {
    try {
       const id = req.params.id
       const rentalOrder = await RentalOrder.findOne({
-         where: { id, userId: req.user.id }, // 본인 주문만 조회
+         where: { id, userId: req.user.id },
          include: [
             {
                model: RentalItem,
                as: 'rentalItems',
-               through: { attributes: ['quantity'] }, // 중간 테이블 quantity 포함
+               through: { attributes: ['quantity'] },
             },
             {
                model: Rating,
@@ -258,7 +246,7 @@ router.get('/list', isLoggedIn, async (req, res) => {
       const page = parseInt(req.query.page, 10) || 1
       const limit = parseInt(req.query.limit, 10) || 10
       const offset = (page - 1) * limit
-      const orderStatus = req.query.orderStatus // 상태 필터 예: 'pending', 'completed'
+      const orderStatus = req.query.orderStatus
 
       const whereClause = { userId: req.user.id }
       if (orderStatus) {
@@ -303,7 +291,7 @@ router.get('/list', isLoggedIn, async (req, res) => {
    }
 })
 
-// 주문 상태 수정 (ex. 주문 취소 등)
+// 주문 상태 수정
 router.put('/:id', isLoggedIn, async (req, res) => {
    try {
       const id = req.params.id
@@ -337,7 +325,6 @@ router.put('/:id', isLoggedIn, async (req, res) => {
 
       await rentalOrder.update({ orderStatus })
 
-      // 주문이 취소된 경우 재고 복구
       if (orderStatus === 'cancelled' && oldStatus !== 'cancelled') {
          for (const orderItem of rentalOrder.orderItems) {
             await RentalItem.increment('quantity', {
@@ -380,7 +367,6 @@ router.delete('/:id', isLoggedIn, async (req, res) => {
          return res.status(404).json({ success: false, message: '주문을 찾을 수 없습니다.' })
       }
 
-      // 주문이 완료되지 않은 경우에만 재고 복구
       if (rentalOrder.orderStatus !== 'completed') {
          for (const orderItem of rentalOrder.orderItems) {
             await RentalItem.increment('quantity', {

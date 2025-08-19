@@ -4,38 +4,29 @@ const path = require('path')
 const fs = require('fs')
 const { Op } = require('sequelize')
 const { RentalItem, RentalImg, Keyword, ItemKeyword, sequelize } = require('../models')
-const { isLoggedIn } = require('./middlewares') // 미들웨어 추가
+const { isLoggedIn } = require('./middlewares')
 const router = express.Router()
 
-// uploads 폴더가 없을 경우 새로 생성
 try {
-   fs.readdirSync('uploads') //해당 폴더가 있는지 확인
+   fs.readdirSync('uploads')
 } catch (error) {
    console.log('uploads 폴더가 없어 uploads 폴더를 생성합니다.')
-   fs.mkdirSync('uploads') //폴더 생성
+   fs.mkdirSync('uploads')
 }
 
-// 이미지 업로드를 위한 multer 설정 (파일 타입 검증 추가)
 const upload = multer({
-   // 저장할 위치와 파일명 지정
    storage: multer.diskStorage({
       destination(req, file, cb) {
-         cb(null, 'uploads/') // uploads폴더에 저장
+         cb(null, 'uploads/')
       },
       filename(req, file, cb) {
-         const decodedFileName = decodeURIComponent(file.originalname) //파일명 디코딩(한글 파일명 깨짐 방지) => 제주도.jpg
-         const ext = path.extname(decodedFileName) //확장자 추출
-         const basename = path.basename(decodedFileName, ext) //확장자 제거한 파일명 추출
-
-         // 파일명 설정: 기존이름 + 업로드 날짜시간 + 확장자
-         // dog.jpg
-         // ex) dog + 1231342432443 + .jpg
+         const decodedFileName = decodeURIComponent(file.originalname)
+         const ext = path.extname(decodedFileName)
+         const basename = path.basename(decodedFileName, ext)
          cb(null, basename + Date.now() + ext)
       },
    }),
-   // 파일의 크기 제한
-   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB로 제한
-   // 파일 타입 검증 추가
+   limits: { fileSize: 5 * 1024 * 1024 },
    fileFilter: (req, file, cb) => {
       if (file.mimetype.startsWith('image/')) {
          cb(null, true)
@@ -144,7 +135,6 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res, next) => {
    try {
       const { rentalItemNm, oneDayPrice, quantity, rentalDetail, rentalStatus = 'Y', keywords } = req.body
 
-      // 필수 필드 검증
       if (!rentalItemNm || !oneDayPrice || quantity === undefined) {
          return res.status(400).json({
             success: false,
@@ -161,7 +151,6 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res, next) => {
          userId: req.user.id,
       })
 
-      // 이미지(RentalImg) insert
       let images = []
       if (req.files && req.files.length > 0) {
          const imageData = req.files.map((file, index) => ({
@@ -175,7 +164,6 @@ router.post('/', isLoggedIn, upload.array('img'), async (req, res, next) => {
          images = await RentalImg.bulkCreate(imageData)
       }
 
-      // 키워드 등록
       if (keywords) {
          const keywordArray = keywords
             .split(',')
@@ -609,7 +597,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
          })
       }
 
-      // 렌탈상품 정보 업데이트
       const updateData = {}
       if (rentalItemNm !== undefined) updateData.rentalItemNm = rentalItemNm
       if (oneDayPrice !== undefined) updateData.oneDayPrice = oneDayPrice
@@ -619,7 +606,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
 
       await rentalItem.update(updateData)
 
-      // 삭제할 이미지가 있을 경우
       if (deleteImages) {
          try {
             let imageIdsToDelete = []
@@ -636,7 +622,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
                   },
                })
 
-               // 파일 시스템에서 이미지 파일 삭제
                imagesToDelete.forEach((image) => {
                   const filePath = path.join(__dirname, '..', 'uploads', image.imgUrl.replace('/uploads/', ''))
                   try {
@@ -646,7 +631,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
                   }
                })
 
-               // 데이터베이스에서 이미지 삭제
                await RentalImg.destroy({
                   where: {
                      id: { [Op.in]: imageIdsToDelete },
@@ -658,7 +642,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
          }
       }
 
-      // 새로운 이미지 파일이 있으면 추가
       if (req.files && req.files.length > 0) {
          const imageData = req.files.map((file) => ({
             imgUrl: `/uploads/${file.filename}`,
@@ -669,10 +652,9 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
 
          await RentalImg.bulkCreate(imageData)
       }
-      // 키워드 업데이트
+
       if (keywords !== undefined) {
          try {
-            // 기존 키워드 연결 삭제
             await ItemKeyword.destroy({
                where: { rentalItemId: id },
                force: true,
@@ -703,7 +685,6 @@ router.put('/edit/:id', upload.array('img'), async (req, res, next) => {
          }
       }
 
-      // 수정된 렌탈상품 정보 조회
       const updatedRentalItem = await RentalItem.findByPk(id, {
          include: [
             {
