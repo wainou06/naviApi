@@ -41,7 +41,6 @@ module.exports = class RentalImg extends Sequelize.Model {
    }
 
    static associate(db) {
-      // RentalImg -> RentalItem (N:1)
       db.RentalImg.belongsTo(db.RentalItem, {
          foreignKey: 'rentalItemId',
          targetKey: 'id',

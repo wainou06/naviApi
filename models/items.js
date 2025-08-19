@@ -52,39 +52,30 @@ module.exports = class Item extends Sequelize.Model {
    }
 
    static associate(db) {
-      // Item -> Order (1:1)
       db.Item.belongsTo(db.Order, {
          foreignKey: 'orderId',
          targetKey: 'id',
          as: 'order',
       })
-
-      // Item -> Img (1:N)
       db.Item.hasMany(db.Img, {
          foreignKey: 'itemId',
          sourceKey: 'id',
          as: 'imgs',
       })
-
-      // Item <-> Keyword (1:n)
       db.Item.hasMany(db.ItemKeyword, {
          foreignKey: 'itemId',
          otherKey: 'keywordId',
       })
-
-      // Item -> User (N:1) (아이템은 하나의 유저에 속함)
       db.Item.belongsTo(db.User, {
          foreignKey: 'userId',
          targetKey: 'id',
          as: 'user',
       })
-
       db.Item.hasOne(db.Chat, {
          foreignKey: 'itemId',
          sourceKey: 'id',
          as: 'chat',
       })
-
       db.Item.hasMany(db.PriceProposal, {
          foreignKey: 'itemId',
          sourceKey: 'id',

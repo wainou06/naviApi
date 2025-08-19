@@ -40,11 +40,10 @@ module.exports = class Img extends Sequelize.Model {
    }
 
    static associate(db) {
-      // Img -> Item (N:1)
       db.Img.belongsTo(db.Item, {
          foreignKey: 'itemId',
          targetKey: 'id',
-         as: 'item', // 필드 이름 일치
+         as: 'item',
       })
    }
 }
