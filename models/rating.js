@@ -36,6 +36,10 @@ module.exports = class Rating extends Sequelize.Model {
                onUpdate: 'CASCADE',
                onDelete: 'CASCADE',
             },
+            priceproposalId: {
+               type: Sequelize.INTEGER,
+               allowNull: true,
+            },
             rentalOrderId: {
                type: Sequelize.INTEGER,
                allowNull: true,
