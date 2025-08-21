@@ -73,9 +73,39 @@ const { Op } = require('sequelize')
  *         description: 서버 오류
  */
 
+// router.post('/', isLoggedIn, async (req, res, next) => {
+//    try {
+//       const { itemId, proposedPrice, message } = req.body
+//       const userId = req.user.id
+
+//       if (!itemId || !proposedPrice) {
+//          return res.status(400).json({ error: 'itemId와 proposedPrice는 필수입니다.' })
+//       }
+
+//       const item = await Item.findByPk(itemId)
+//       if (!item) {
+//          return res.status(404).json({ error: '해당 아이템이 존재하지 않습니다.' })
+//       }
+
+//       const newProposal = await PriceProposal.create({
+//          itemId,
+//          userId,
+//          proposedPrice,
+//          message,
+//          deliveryMethod,
+//          status: 'pending', // 기본 상태 추가 필요
+//       })
+
+//       res.status(201).json(newProposal)
+//    } catch (error) {
+//       error.status = 500
+//       error.message = '가격 제안 생성 중 오류가 발생했습니다.'
+//       next(error)
+//    }
+// })
 router.post('/', isLoggedIn, async (req, res, next) => {
    try {
-      const { itemId, proposedPrice, message } = req.body
+      const { itemId, proposedPrice, message, deliveryMethod } = req.body
       const userId = req.user.id
 
       if (!itemId || !proposedPrice) {
@@ -87,13 +117,21 @@ router.post('/', isLoggedIn, async (req, res, next) => {
          return res.status(404).json({ error: '해당 아이템이 존재하지 않습니다.' })
       }
 
-      const newProposal = await PriceProposal.create({
+      const createData = {
          itemId,
          userId,
          proposedPrice,
-         message,
-         status: 'pending', // 기본 상태 추가 필요
-      })
+         status: 'pending',
+      }
+
+      if (message) {
+         createData.message = message
+      }
+      if (deliveryMethod) {
+         createData.deliveryMethod = deliveryMethod
+      }
+
+      const newProposal = await PriceProposal.create(createData)
 
       res.status(201).json(newProposal)
    } catch (error) {
