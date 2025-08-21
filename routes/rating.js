@@ -13,7 +13,7 @@ router.get('/:id', isLoggedIn, async (req, res, next) => {
       })
 
       if (!priceProposal) {
-         res.status(200).json({
+         return res.status(200).json({
             success: true,
             priceProposal: null,
             rating: null,
