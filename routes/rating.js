@@ -1,5 +1,5 @@
 const express = require('express')
-const { isLoggedIn } = require('./middlewares')
+const { isLoggedIn, isManager } = require('./middlewares')
 const Rating = require('../models/rating')
 const PriceProposal = require('../models/priceproposal')
 const router = express.Router()
@@ -32,6 +32,24 @@ router.get('/:id', isLoggedIn, async (req, res, next) => {
    } catch (error) {
       error.status = 500
       error.message = `유저 조회 중 오류가 발생했습니다. ${error}`
+      next(error)
+   }
+})
+
+router.get('/getRating/:id', isLoggedIn, isManager, async (req, res, next) => {
+   try {
+      const id = req.params.id
+      const rating = await Rating.findAll({
+         where: { toUserId: id },
+      })
+
+      res.status(200).json({
+         success: true,
+         rating,
+      })
+   } catch (error) {
+      error.status = 500
+      error.message = `별점 조회 중 오류가 발생했습니다. ${error}`
       next(error)
    }
 })
