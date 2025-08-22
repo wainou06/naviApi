@@ -16,26 +16,6 @@ module.exports = class Rating extends Sequelize.Model {
                type: Sequelize.TEXT,
                allowNull: false,
             },
-            userId: {
-               type: Sequelize.INTEGER,
-               allowNull: false,
-               references: {
-                  model: 'Users',
-                  key: 'id',
-               },
-               onUpdate: 'CASCADE',
-               onDelete: 'CASCADE',
-            },
-            orderId: {
-               type: Sequelize.INTEGER,
-               allowNull: true,
-               references: {
-                  model: 'Orders',
-                  key: 'id',
-               },
-               onUpdate: 'CASCADE',
-               onDelete: 'CASCADE',
-            },
             priceproposalId: {
                type: Sequelize.INTEGER,
                allowNull: true,
@@ -72,11 +52,6 @@ module.exports = class Rating extends Sequelize.Model {
       Rating.belongsTo(db.User, {
          foreignKey: 'toUserId',
          targetKey: 'id',
-      })
-      db.Rating.belongsTo(db.Order, {
-         foreignKey: 'orderId',
-         targetKey: 'id',
-         as: 'order',
       })
       db.Rating.belongsTo(db.RentalOrder, {
          foreignKey: 'rentalOrderId',

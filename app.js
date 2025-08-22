@@ -16,7 +16,6 @@ const { sequelize } = require('./models')
 // 라우터 불러오기
 const indexRouter = require('./routes')
 const itemsRouter = require('./routes/items')
-const orderRouter = require('./routes/order')
 const rentalItemsRouter = require('./routes/rentalItems')
 const rentalOrderRouter = require('./routes/rentalOrder')
 const authRouter = require('./routes/auth')
@@ -29,7 +28,7 @@ const ratingRouter = require('./routes/rating')
 
 // DB 연결
 sequelize
-   .sync({ force: false })
+   .sync({ force: true })
    .then(() => console.log('데이터베이스 연결 성공'))
    .catch((err) => console.log('데이터베이스 연결 실패:', err))
 
@@ -78,7 +77,6 @@ app.use(passport.session())
 // 라우터
 app.use('/', indexRouter)
 app.use('/items', itemsRouter)
-app.use('/order', orderRouter)
 app.use('/rental', rentalItemsRouter)
 app.use('/rental/orders', rentalOrderRouter)
 app.use('/auth', authRouter)
