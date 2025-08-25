@@ -4,6 +4,14 @@ const { Op } = require('sequelize')
 function startRentalBatchJob() {
    const runBatch = async () => {
       try {
+         // 테이블 존재 여부 확인
+         const queryInterface = sequelize.getQueryInterface()
+         const tables = await queryInterface.showAllTables()
+
+         if (!tables.includes('RentalOrders') || !tables.includes('RentalOrderItems') || !tables.includes('RentalItems')) {
+            return
+         }
+
          const today = new Date()
          today.setHours(0, 0, 0, 0)
 
@@ -45,7 +53,8 @@ function startRentalBatchJob() {
       }
    }
 
-   runBatch()
+   setTimeout(runBatch, 5000)
+
    setInterval(runBatch, 60 * 1000)
 }
 
