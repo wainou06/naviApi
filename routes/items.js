@@ -109,7 +109,7 @@ const upload = multer({
 //상품 목록 조회 (검색, 페이징 기능) /items/list
 router.get('/list', async (req, res, next) => {
    try {
-      const { page = 1, limit = 10, searchTerm = '', searchCategory = '', sellCategory = '' } = req.query
+      const { page = 1, limit = 10, searchTerm = '', sellCategory = '' } = req.query
 
       const offset = (page - 1) * limit
 

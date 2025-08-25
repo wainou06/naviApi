@@ -8,7 +8,7 @@ function startRentalBatchJob() {
          const queryInterface = sequelize.getQueryInterface()
          const tables = await queryInterface.showAllTables()
 
-         if (!tables.includes('RentalOrders') || !tables.includes('RentalOrderItems') || !tables.includes('RentalItems')) {
+         if (!tables.includes('rentalorders') || !tables.includes('rentalorderitems') || !tables.includes('rentalitems')) {
             return
          }
 
@@ -19,11 +19,14 @@ function startRentalBatchJob() {
             where: {
                useEnd: { [Op.lt]: today },
                orderStatus: { [Op.ne]: 'completed' },
+               deletedAt: null,
             },
             include: [
                {
                   model: RentalOrderItem,
                   as: 'rentalOrderItems',
+                  where: { deletedAt: null },
+                  required: false,
                },
             ],
          })
