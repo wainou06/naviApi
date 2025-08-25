@@ -64,12 +64,6 @@ module.exports = class User extends Sequelize.Model {
          as: 'rentalOrders',
       })
 
-      db.User.hasMany(db.Rating, {
-         foreignKey: 'userId',
-         sourceKey: 'id',
-         as: 'ratings',
-      })
-
       db.User.hasMany(db.Item, {
          foreignKey: 'userId',
          sourceKey: 'id',
