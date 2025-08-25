@@ -6,7 +6,7 @@ const { Op } = require('sequelize')
 
 /**
  * @swagger
- * /api/chat:
+ * /chats:
  *   get:
  *     summary: 내 채팅방 목록 조회
  *     description: 로그인한 사용자의 채팅방 목록을 조회합니다. 각 채팅방에는 최근 메시지 1개와 참여자 정보가 포함됩니다.
@@ -111,7 +111,7 @@ router.get('/', isLoggedIn, async (req, res, next) => {
 
 /**
  * @swagger
- * /api/chat/create:
+ * /chats/create:
  *   post:
  *     summary: 채팅방 조회 또는 생성
  *     description: 특정 상품과 참여자(buyer, seller)에 대한 채팅방을 조회하고, 없으면 새로 생성합니다.
@@ -206,7 +206,7 @@ router.post('/create', isLoggedIn, async (req, res, next) => {
 
 /**
  * @swagger
- * /api/chat/{chatId}/messages:
+ * /chats/{chatId}/messages:
  *   get:
  *     summary: 채팅방 메시지 목록 조회
  *     description: 특정 채팅방(chatId)의 모든 메시지를 조회합니다. 각 메시지는 발신자(sender) 정보(nick 포함)를 포함합니다.
@@ -258,7 +258,7 @@ router.get('/:chatId/messages', isLoggedIn, async (req, res, next) => {
 
 /**
  * @swagger
- * /api/chat/{chatId}/message:
+ * /chats/{chatId}/message:
  *   post:
  *     summary: 메시지 작성
  *     description: 특정 채팅방(chatId)에 메시지를 작성합니다.
@@ -310,6 +310,74 @@ router.post('/:chatId/message', isLoggedIn, async (req, res, next) => {
    } catch (error) {
       error.status = 500
       error.message = '메세지 전송 중 오류가 발생했습니다.'
+      next(error)
+   }
+})
+
+/**
+ * @swagger
+ * /chats/{chatId}:
+ *   delete:
+ *     summary: 채팅방 삭제
+ *     description: 로그인한 사용자가 참여자인 채팅방을 삭제합니다. (buyer 또는 seller만 삭제 가능)
+ *     tags:
+ *       - Chat
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: chatId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 삭제할 채팅방 ID
+ *     responses:
+ *       200:
+ *         description: 채팅방 삭제 성공
+ *
+ *       403:
+ *         description: 권한 없음 (buyer/seller가 아닌 경우)
+ *
+ *       404:
+ *         description: 채팅방 없음
+ *
+ *       500:
+ *         description: 서버 에러
+ */
+
+router.delete('/:chatId', isLoggedIn, async (req, res, next) => {
+   try {
+      const { chatId } = req.params
+      const userId = req.user.id // 로그인 유저 id (passport 세션에서 가져옴)
+
+      // 채팅방 존재 여부 확인
+      const chat = await Chat.findOne({
+         where: { id: chatId },
+         include: [
+            { model: User, as: 'buyer', attributes: ['id'] },
+            { model: User, as: 'seller', attributes: ['id'] },
+         ],
+      })
+
+      if (!chat) {
+         return res.status(404).json({ success: false, message: '존재하지 않는 채팅방입니다.' })
+      }
+
+      // 삭제 권한 체크 (참여자만 가능)
+      if (chat.buyerId !== userId && chat.sellerId !== userId) {
+         return res.status(403).json({ success: false, message: '삭제 권한이 없습니다.' })
+      }
+
+      // 관련 메시지 먼저 삭제
+      await Message.destroy({ where: { chatId } })
+
+      // 채팅방 삭제
+      await Chat.destroy({ where: { id: chatId } })
+
+      return res.json({ success: true, message: '채팅방이 삭제되었습니다.' })
+   } catch (error) {
+      error.status = 500
+      error.message = '채팅방 삭제 중 오류가 발생했습니다.'
       next(error)
    }
 })

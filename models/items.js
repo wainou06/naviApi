@@ -20,14 +20,6 @@ module.exports = class Item extends Sequelize.Model {
                type: Sequelize.TEXT,
                allowNull: false,
             },
-            orderId: {
-               type: Sequelize.INTEGER,
-               allowNull: true,
-               references: {
-                  model: 'Orders',
-                  key: 'id',
-               },
-            },
             userId: {
                type: Sequelize.INTEGER,
                allowNull: false,
@@ -51,11 +43,6 @@ module.exports = class Item extends Sequelize.Model {
    }
 
    static associate(db) {
-      db.Item.belongsTo(db.Order, {
-         foreignKey: 'orderId',
-         targetKey: 'id',
-         as: 'order',
-      })
       db.Item.hasMany(db.Img, {
          foreignKey: 'itemId',
          sourceKey: 'id',

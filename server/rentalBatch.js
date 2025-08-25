@@ -4,6 +4,14 @@ const { Op } = require('sequelize')
 function startRentalBatchJob() {
    const runBatch = async () => {
       try {
+         // 테이블 존재 여부 확인
+         const queryInterface = sequelize.getQueryInterface()
+         const tables = await queryInterface.showAllTables()
+
+         if (!tables.includes('rentalorders') || !tables.includes('rentalorderitems') || !tables.includes('rentalitems')) {
+            return
+         }
+
          const today = new Date()
          today.setHours(0, 0, 0, 0)
 
@@ -11,11 +19,14 @@ function startRentalBatchJob() {
             where: {
                useEnd: { [Op.lt]: today },
                orderStatus: { [Op.ne]: 'completed' },
+               deletedAt: null,
             },
             include: [
                {
                   model: RentalOrderItem,
                   as: 'rentalOrderItems',
+                  where: { deletedAt: null },
+                  required: false,
                },
             ],
          })
@@ -45,7 +56,8 @@ function startRentalBatchJob() {
       }
    }
 
-   runBatch()
+   setTimeout(runBatch, 5000)
+
    setInterval(runBatch, 60 * 1000)
 }
 
