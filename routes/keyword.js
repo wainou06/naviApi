@@ -89,8 +89,6 @@ router.get('/', isLoggedIn, async (req, res, next) => {
    try {
       const keywords = await Keyword.findAll({})
 
-      console.log('keywords: ', keywords)
-
       res.status(200).json({
          success: true,
          keywords,

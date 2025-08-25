@@ -1,7 +1,7 @@
 const express = require('express')
 const multer = require('multer')
 const path = require('path')
-const { Item, Img, ItemKeyword, Keyword, Order, User } = require('../models')
+const { Item, Img, ItemKeyword, Keyword, User } = require('../models')
 const { Op } = require('sequelize')
 const { isLoggedIn } = require('./middlewares')
 const fs = require('fs')
@@ -109,7 +109,7 @@ const upload = multer({
 //상품 목록 조회 (검색, 페이징 기능) /items/list
 router.get('/list', async (req, res, next) => {
    try {
-      const { page = 1, limit = 10, searchTerm = '', searchCategory = '', sellCategory = '' } = req.query
+      const { page = 1, limit = 10, searchTerm = '', sellCategory = '' } = req.query
 
       const offset = (page - 1) * limit
 
@@ -146,7 +146,6 @@ router.get('/list', async (req, res, next) => {
          ],
          limit: parseInt(limit),
          offset: parseInt(offset),
-         order: [['createdAt', 'DESC']],
          distinct: true,
       })
 
@@ -233,19 +232,6 @@ router.get('/detail/:id', async (req, res, next) => {
                   {
                      model: Keyword,
                      required: false,
-                  },
-               ],
-            },
-            {
-               model: Order,
-               as: 'order',
-               required: false,
-               include: [
-                  {
-                     model: User,
-                     as: 'user',
-                     required: false,
-                     attributes: ['id', 'name', 'email'],
                   },
                ],
             },

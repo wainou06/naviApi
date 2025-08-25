@@ -140,6 +140,7 @@ router.post('/', isLoggedIn, async (req, res, next) => {
       next(error)
    }
 })
+
 /**
  * @swagger
  * /priceProposal/user/sent:
@@ -530,7 +531,7 @@ router.get('/:itemId', isLoggedIn, async (req, res, next) => {
  *             properties:
  *               status:
  *                 type: string
- *                 description: 변경할 상태 (예: pending, accepted, rejected)
+ *                 description: "변경할 상태 (예: pending, accepted, rejected)"
  *                 example: accepted
  *     responses:
  *       200:
