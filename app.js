@@ -44,7 +44,7 @@ app.set('port', process.env.PORT || 8002)
 // CORS
 app.use(
    cors({
-      origin: 'http://localhost:5173',
+      origin: process.env.FRONTEND_APP_URL,
       credentials: true,
    })
 )
