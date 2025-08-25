@@ -36,6 +36,15 @@ router.get('/:id', isLoggedIn, async (req, res, next) => {
    }
 })
 
+router.get('/:id', isLoggedIn, async (req, res, next) => {
+   try {
+   } catch (error) {
+      error.status = 500
+      error.message = '렌탈 사용자 조회 중 오류가 발생했습니다.'
+      next(error)
+   }
+})
+
 router.get('/getRating/:id', isLoggedIn, isManager, async (req, res, next) => {
    try {
       const id = req.params.id
@@ -64,7 +73,7 @@ router.post('/', isLoggedIn, async (req, res, next) => {
 
       if (exRating) {
          const error = new Error('이미 평가를 남겼습니다.')
-         error.status = 4004
+         error.status = 404
          return next(error)
       }
 
@@ -73,7 +82,6 @@ router.post('/', isLoggedIn, async (req, res, next) => {
          fromUserId: data.fromUserId,
          rating: data.rating,
          comment: data.comment,
-         userId: data.userId,
          orderId: null,
          rentalOrderId: data.rentalOrderId,
          priceproposalId: data.orderId,

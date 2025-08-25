@@ -1,35 +1,46 @@
 const express = require('express')
 const router = express.Router()
-const Item = require('../models/items')
+const { Item } = require('../models')
 const Img = require('../models/img')
+const { isLoggedIn } = require('./middlewares')
 const { Op, fn, col } = require('sequelize')
-router.post('/recommend', async (req, res, next) => {
+
+router.post('/recommend', isLoggedIn, async (req, res, next) => {
    try {
-      const items = req.body
-      const ids = items.map((x) => x.id)
-      //  const recommendItems = await Item.findAll({ where: { id: ids } });
-      const recommendItems = await Item.findAll({
-         where: { id: { [Op.in]: ids } },
+      const ids = req.body
+
+      const recommendList = await Item.findAll({
+         where: {
+            userId: { [Op.in]: ids },
+            itemSellStatus: 'SELL',
+         },
          include: [
             {
                model: Img,
                as: 'imgs',
-               attributes: ['id', 'originName', 'imgUrl'],
-               //    where: { repImgYn: 'Y' },
+               required: false,
             },
          ],
-         order: [[fn('FIELD', col('Item.id'), ...ids), 'ASC']], // id 순서 그대로
-         distinct: true, // 중복 로우 방지(조인 시)
+         order: [[fn('FIELD', col('Item.id'), ...ids)]],
+         distinct: true,
       })
+
+      if (recommendList.length <= 0) {
+         res.json({
+            success: true,
+            message: '추천 유저의 상품이 존재하지 않습니다.',
+         })
+      }
 
       res.json({
          success: true,
-         message: '추천 상품 조회 성공',
-         recommendItems,
+         message: '추천 유저 조회 성공',
+         recommendList,
       })
    } catch (error) {
+      console.log(error)
       error.status = 500
-      error.message = `추천 상품을 불러오는 중 오류가 발생했습니다. ${error}`
+      error.message = `추천 유저를 불러오는 중 오류가 발생했습니다. ${error}`
       next(error)
    }
 })

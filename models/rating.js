@@ -16,16 +16,6 @@ module.exports = class Rating extends Sequelize.Model {
                type: Sequelize.TEXT,
                allowNull: false,
             },
-            userId: {
-               type: Sequelize.INTEGER,
-               allowNull: false,
-               references: {
-                  model: 'Users',
-                  key: 'id',
-               },
-               onUpdate: 'CASCADE',
-               onDelete: 'CASCADE',
-            },
             orderId: {
                type: Sequelize.INTEGER,
                allowNull: true,
