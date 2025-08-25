@@ -530,11 +530,9 @@ router.get(
    '/google/callback',
    passport.authenticate('google', {
       failureRedirect: 'http://localhost:5173/login',
-      // session: false,
       session: true,
    }),
    (req, res) => {
-      // 로그인 성공 시 프론트로 리디렉션
       res.redirect('http://localhost:5173')
    }
 )
