@@ -26,7 +26,7 @@ router.post('/recommend', isLoggedIn, async (req, res, next) => {
       })
 
       if (recommendList.length <= 0) {
-         res.json({
+         return res.json({
             success: true,
             message: '추천 유저의 상품이 존재하지 않습니다.',
          })
