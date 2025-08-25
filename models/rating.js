@@ -16,6 +16,7 @@ module.exports = class Rating extends Sequelize.Model {
                type: Sequelize.TEXT,
                allowNull: false,
             },
+
             priceproposalId: {
                type: Sequelize.INTEGER,
                allowNull: true,
