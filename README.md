@@ -1,15 +1,15 @@
-﻿   <img src="image/나비-로고.jpg" alt="로고" width="100%"/>
+   <img src="image/나비-로고.jpg" alt="로고" width="100%"/>
 
-<h1>S&R, 나비: 나누고, 비우고</h1>
-<hr style="border: 1px solid #ccc;" />
+## S&R, 나비: 나누고, 비우고
+<hr style="border: none; border-top: 1px solid #ccc;" />
 <p>중고상품거래, 중고렌탈 리커머스 사이트</p>
 
-<h1>개발기간</h1>
-<hr style="border: 1px solid #ccc;" />
+## 개발기간
+<hr style="border: none; border-top: 1px solid #ccc;" />
 <p>25.07.29 ~ 25.08.22</p>
 
-<h1>소개</h1>
-<hr style="border: 1px solid #ccc;" />
+## 소개
+<hr style="border: none; border-top: 1px solid #ccc;" />
 <p>기존 중고 거래 사이트들의 가장 불편한 점이 뭘까? 바로 <b>채팅 의존적인 네고 시스템</b><br/>
 끝없는 가격 네고 채팅, 애매한 가격 제시와 거래 방법에 인한 시간 낭비, 채팅 부담으로 포기하는 거래들을 떠올리며 기획한 사이트입니다.<br/>
 
@@ -61,4 +61,3 @@
 
 -  **배치 작업**: 렌탈 기간이 끝난 상품의 재고를 자동으로 복구하고, 주문 상태를 '완료'로 변경하는 작업을 1분 단위로 실행함.
 -  **트랜잭션 처리**: 데이터의 일관성과 안정성을 보장하기 위해 모든 배치 작업은 트랜잭션을 기반으로 처리된다
-
