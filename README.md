@@ -20,12 +20,57 @@
 
 ## 팀원 소개
 
-| 이름   | 역할      | GitHub |
-|--------|-----------|--------|
-| 황민영   | 팀장(프론트엔드, 실시간 채팅)    | [링크](https://github.com/wainou06) |
-| 전예은   | 팀원(백엔드, 상품 및 렌탈) | [링크](https://github.com/yeni0727) |
-| 전준모   | 팀원(백엔드, 로그인/회원가입 및 내 정보)  | [링크](https://github.com/aggawa) |
-| 차민준   | 팀원(백엔드, 별점 시스템 및 키워드 관리)  | [링크](https://github.com/blessserenity) |
+| 이름   | 역할                                     | GitHub                                   |
+| ------ | ---------------------------------------- | ---------------------------------------- |
+| 황민영 | 팀장(프론트엔드, 실시간 채팅)            | [링크](https://github.com/wainou06)      |
+| 전예은 | 팀원(백엔드, 상품 및 렌탈)               | [링크](https://github.com/yeni0727)      |
+| 전준모 | 팀원(백엔드, 로그인/회원가입 및 내 정보) | [링크](https://github.com/aggawa)        |
+| 차민준 | 팀원(백엔드, 별점 시스템 및 키워드 관리) | [링크](https://github.com/blessserenity) |
+
+---
+
+## 기술 스택
+
+-  **Front-end (React v19.1.0)**
+
+   -  **SWIPERJS**: swiperjs.com (슬라이드 컴포넌트)
+   -  **@mui/material / @mui/icons-material**: UI 컴포넌트 & 아이콘 스타일링
+   -  **@reduxjs/toolkit, react-redux, redux, reselect**: 상태 관리 (Redux + Selector 최적화)
+   -  **react-router-dom**: 클라이언트 사이드 라우팅
+   -  **socket.io-client**: WebSocket 기반 실시간 통신
+   -  **axios**: HTTP 클라이언트
+   -  **dayjs**: 날짜 및 시간 처리
+
+-  **Back-end (Node.js v22.11.0)**
+
+   -  **Express**: 웹 프레임 워크
+   -  **Jsonwebtoken**: JWT 기반 인증
+   -  **passport, passport-local**: OAuth 및 로컬 인증
+   -  **bcrypt**: 비밀번호 해싱
+   -  **express-session, cookie-parser**: 세션 및 쿠키 관리
+   -  **socket.io**: WebSocket 기반 실시간 통신
+   -  **multer**: 파일 업로드 처리
+   -  **dotenv**: 환경 변수 관리
+   -  **cors**: CORS 정책 설정
+
+-  **Database (MySQL)**
+
+   -  **MySQL2**: Node.js용 MySQL 클라이언트
+   -  **Sequelize**: ORM (객체 관계 매핑) → 모델 정의 및 쿼리 단순화
+   -  **MySQL Workbench / DBeaver**: DB 시각화 및 관리 툴
+
+-  **Machine Learning (Python + FastAPI)**
+
+   -  **FastAPI**: 추천 시스템 API 서버 제공
+   -  **pandas**: 데이터 전처리 및 집계
+   -  **scikit-learn (LabelEncoder)**: 범주형 데이터 인코딩
+   -  **scipy (coo_matrix, csr_matrix)**: 희소 행렬 변환
+   -  **implicit (ALS)**: 협업 필터링 기반 추천 알고리즘
+
+-  **Deploy**
+   -  **AWS EC2 Ubuntu**: 백엔드, 프론트엔드, 머신러닝 배포
+   -  **AWS RDS**: Mysql 배포
+   -  **Nginx**: proxy 설정
 
 ---
 
