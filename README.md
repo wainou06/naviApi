@@ -32,7 +32,6 @@
 ## 기술 스택
 
 -  **🖥 Front-end (React v19.1.0)**
-   <br/>
 
    -  **SWIPERJS**: swiperjs.com (슬라이드 컴포넌트)
    -  **@mui/material / @mui/icons-material**: UI 컴포넌트 & 아이콘 스타일링
@@ -43,7 +42,6 @@
    -  **dayjs**: 날짜 및 시간 처리
 
 -  **🛠 Back-end (Node.js v22.11.0)**
-   <br/>
 
    -  **Express**: 웹 프레임 워크
    -  **Jsonwebtoken**: JWT 기반 인증
@@ -56,14 +54,12 @@
    -  **cors**: CORS 정책 설정
 
 -  **🗄 Database (MySQL)**
-   <br/>
 
    -  **MySQL2**: Node.js용 MySQL 클라이언트
    -  **Sequelize**: ORM (객체 관계 매핑) → 모델 정의 및 쿼리 단순화
    -  **MySQL Workbench / DBeaver**: DB 시각화 및 관리 툴
 
 -  **📊 Machine Learning (Python + FastAPI)**
-   <br/>
 
    -  **FastAPI**: 추천 시스템 API 서버 제공
    -  **pandas**: 데이터 전처리 및 집계
@@ -72,7 +68,7 @@
    -  **implicit (ALS)**: 협업 필터링 기반 추천 알고리즘
 
 -  **🌐 Deploy**
-   <br/>
+
    -  **AWS EC2 Ubuntu**: 백엔드, 프론트엔드, 머신러닝 배포
    -  **AWS RDS**: Mysql 배포
    -  **Nginx**: proxy 설정
