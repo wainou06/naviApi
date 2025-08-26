@@ -20,7 +20,6 @@ const rentalItemsRouter = require('./routes/rentalItems')
 const rentalOrderRouter = require('./routes/rentalOrder')
 const authRouter = require('./routes/auth')
 const keywordRouter = require('./routes/keyword')
-const matchingRouter = require('./routes/matching')
 const priceProposalRouter = require('./routes/priceproposal')
 const infoRouter = require('./routes/info')
 const chatRouter = require('./routes/chat')
@@ -43,7 +42,7 @@ app.set('port', process.env.PORT || 8002)
 // CORS
 app.use(
    cors({
-      origin: 'http://localhost:5173',
+      origin: process.env.FRONTEND_APP_URL,
       credentials: true,
    })
 )
@@ -81,7 +80,6 @@ app.use('/rental', rentalItemsRouter)
 app.use('/rental/orders', rentalOrderRouter)
 app.use('/auth', authRouter)
 app.use('/keyword', keywordRouter)
-app.use('/matching', matchingRouter)
 app.use('/priceProposal', priceProposalRouter)
 app.use('/info', infoRouter)
 app.use('/chats', chatRouter)
