@@ -169,3 +169,13 @@
    -  **고객센터**: 사용자가 고객센터 메뉴를 클릭할 때, 채팅방이 생성되고 관리자와 실시간 채팅이 시작됩니다.
 
 ---
+
+### 시스템 아키텍처
+   <img src="image/아키텍처.png" alt="아키텍처" width="100%"/>
+
+### ERD
+   <a href="https://www.erdcloud.com/d/rXxZ64qo8b2Y2PD9w">
+      <img src="image/ERD.jpg" alt="ERD" width="100%"/>
+   </a>
+
+---
