@@ -147,6 +147,7 @@ router.get('/list', async (req, res, next) => {
          limit: parseInt(limit),
          offset: parseInt(offset),
          distinct: true,
+         order: [['createdAt', 'DESC']],
       })
 
       const totalPages = Math.ceil(count / limit)
