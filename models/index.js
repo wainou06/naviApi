@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize')
-const env = 'development'
-const config = require('../config/config.json')[env]
+const env = process.env.NODE_ENV || 'development'
+const config = require('../config/config')[env]
 
 const Img = require('./img')
 const Item = require('./items')
