@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const { PriceProposal, Item, User, sequelize, Img } = require('../models')
-const { isLoggedIn } = require('./middlewares')
+const { isLoggedIn, isSuspended } = require('./middlewares')
 const { Op } = require('sequelize')
 
 /**
@@ -103,7 +103,7 @@ const { Op } = require('sequelize')
 //       next(error)
 //    }
 // })
-router.post('/', isLoggedIn, async (req, res, next) => {
+router.post('/', isLoggedIn, isSuspended, async (req, res, next) => {
    try {
       const { itemId, proposedPrice, message, deliveryMethod } = req.body
       const userId = req.user.id

@@ -2,7 +2,7 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const passport = require('passport')
 const User = require('../models/user')
-const { isLoggedIn, isNotLoggedIn } = require('./middlewares')
+const { isLoggedIn, isNotLoggedIn, isSuspended } = require('./middlewares')
 
 const router = express.Router()
 
@@ -291,6 +291,7 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
                access: user.access,
                phone: user.phone,
                address: user.address,
+               suspend: user.suspend,
             },
          })
       })
@@ -465,7 +466,7 @@ router.get('/status', async (req, res, next) => {
  *                   type: string
  *                   example: 유저 정보를 불러오는 중 오류가 발생했습니다.
  */
-router.put('/my', isLoggedIn, async (req, res, next) => {
+router.put('/my', isLoggedIn, isSuspended, async (req, res, next) => {
    try {
       if (!req.isAuthenticated()) {
          return res.status(401).json({
