@@ -7,104 +7,54 @@ const { Op, fn, col } = require('sequelize')
 
 /**
  * @swagger
- * tags:
- * - name: Recommendation
- * description: 추천 관련 API
- * components:
- * schemas:
- * Item:
- * type: object
- * properties:
- * id:
- * type: integer
- * description: 아이템 ID
- * itemName:
- * type: string
- * description: 아이템 이름
- * price:
- * type: integer
- * description: 아이템 가격
- * itemSellStatus:
- * type: string
- * description: 아이템 판매 상태
- * example: "SELL"
- * Image:
- * type: object
- * properties:
- * id:
- * type: integer
- * url:
- * type: string
- * description: 이미지 URL
- * Error:
- * type: object
- * properties:
- * success:
- * type: boolean
- * example: false
- * message:
- * type: string
- * example: "오류 메시지"
- * securitySchemes:
- * BearerAuth:
- * type: http
- * scheme: bearer
- * bearerFormat: JWT
- */
-
-/**
- * @swagger
  * /recommend:
- * post:
- * summary: 추천 사용자 아이템 목록 조회
- * description: 요청 본문에 포함된 사용자 ID 목록을 기반으로, 판매 중인 아이템 목록을 추천합니다.
- * tags: [Recommendation]
- * security:
- * - BearerAuth: []
- * requestBody:
- * required: true
- * content:
- * application/json:
- * schema:
- * type: array
- * items:
- * type: integer
- * example: [1, 2, 3]
- * responses:
- * 200:
- * description: 추천 아이템 목록 조회 성공
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * success:
- * type: boolean
- * example: true
- * message:
- * type: string
- * example: "추천 유저 조회 성공"
- * recommendList:
- * type: array
- * items:
- * type: object
- * properties:
- * id:
- * type: integer
- * itemName:
- * type: string
- * itemSellStatus:
- * type: string
- * imgs:
- * type: array
- * items:
- * $ref: '#/components/schemas/Image'
- * 500:
- * description: 서버 오류
- * content:
- * application/json:
- * schema:
- * $ref: '#/components/schemas/Error'
+ *   post:
+ *     summary: 추천 유저들의 판매 중인 상품 조회
+ *     description: 로그인된 사용자가 제공한 유저 ID 배열을 기반으로 해당 유저들이 판매 중인 상품 목록을 반환합니다.
+ *     tags:
+ *       - Items
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             items:
+ *               type: integer
+ *             example: [1, 2, 3]
+ *     responses:
+ *       200:
+ *         description: 추천 유저의 판매 상품 목록 또는 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 추천 유저 조회 성공
+ *                 recommendList:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Item'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: 추천 유저를 불러오는 중 오류가 발생했습니다.
  */
 
 router.post('/recommend', isLoggedIn, async (req, res, next) => {
