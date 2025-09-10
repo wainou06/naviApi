@@ -94,20 +94,18 @@ app.use((req, res, next) => {
    next(error)
 })
 
-// 에러 처리
+// 통합 에러 처리 미들웨어
 app.use((err, req, res, next) => {
    console.error(err)
+
    const statusCode = err.status || 500
    const message = err.message || '서버 내부 오류'
-   res.status(statusCode).json({ success: false, message, error: err })
-})
 
-// app.js (혹은 server.js)
-app.use((err, req, res, next) => {
-   console.error(err) // 서버 콘솔
-   res.status(err.status || 500).json({
-      field: err.field || null,
-      message: err.message || '알 수 없는 오류입니다.',
+   res.status(statusCode).json({
+      success: false,
+      message,
+      field: err.field || null, // check-email, check-nick 대응
+      error: process.env.NODE_ENV === 'production' ? undefined : err, // 개발 환경만 상세 에러 노출
    })
 })
 
